@@ -27,7 +27,7 @@
     <ClCompile Include="hongjua_20251398.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="kimyumi_1104.c">
+    <ClCompile Include="kimyumi_20251389.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Leejongseok_20251413.c">
@@ -47,7 +47,7 @@
     <ClInclude Include="hongjua_20251398.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="kimyumi_1104.h">
+    <ClInclude Include="kimyumi_20251389.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

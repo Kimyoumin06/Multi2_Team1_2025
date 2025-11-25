@@ -127,7 +127,7 @@
     <ClCompile Include="action.c" />
     <ClCompile Include="hongjua_20251398.c" />
     <ClCompile Include="kimyoumin_20251402.c" />
-    <ClCompile Include="kimyumi_1104.c" />
+    <ClCompile Include="kimyumi_20251389.c" />
     <ClCompile Include="Leejongseok_20251413.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
@@ -135,7 +135,7 @@
     <ClInclude Include="action.h" />
     <ClInclude Include="hongjua_20251398.h" />
     <ClInclude Include="kimyoumin_20251402.h" />
-    <ClInclude Include="kimyumi_1104.h" />
+    <ClInclude Include="kimyumi_20251389.h" />
     <ClInclude Include="Leejongseok_20251413.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

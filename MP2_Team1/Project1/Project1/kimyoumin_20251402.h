@@ -1,2 +1,2 @@
 #pragma once
-int KYM(int hp, char* name);
+int KUM(int hp, char* name);

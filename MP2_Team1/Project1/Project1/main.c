@@ -6,7 +6,7 @@
 #include "kimyoumin_20251402.h"
 #include "Leejongseok_20251413.h"
 #include "hongjua_20251398.h"
-#include "kimyumi_1104.h"
+#include "kimyumi_20251389.h"
 
 typedef int (*ActionFunc)(int hp, char* name);
 
@@ -32,13 +32,13 @@ int main()
     }
     //함수 각각 플레이어에 연결하는 부분
     p[0].name = "김유민";
-    p[0].act = KYM;
+    p[0].act = KUM;
     p[1].name = "이종석";
     p[1].act = LJS;
     p[2].name = "홍주아";
     p[2].act = HJA;
     p[3].name = "김유미";
-    p[3].act = ES1action;
+    p[3].act = KYM;
 
 
     while (1)

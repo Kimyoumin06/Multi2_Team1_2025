@@ -3,7 +3,7 @@
 //return Heal(hp, name);
 //둘중 하나여야함
 
-int KYM(int hp, char* name)
+int KUM(int hp, char* name)
 {
 	int r = rand() % 10;
 
