@@ -1,0 +1,509 @@
+#include "api.h"        // 필수: API 함수 및 CMD_ 매크로
+
+#include <stdio.h>      // 필수: 파일 입출력
+
+#include <stdlib.h>     // 필수: 문자열 변환, abs 등
+
+#include <string.h>     // 필수: 문자열 처리
+
+
+
+// 학생의 고유번호를 발급받아 저장할 변수
+
+int my_secret_key_b;
+
+
+
+// =================================================================================================
+
+// [PART 1] CSV 파싱 및 데이터 로드
+
+// =================================================================================================
+
+
+
+typedef struct {
+
+    int id;
+
+    char name[50];
+
+    char slot[10];
+
+    int atk;
+
+    int def;
+
+    int hp;
+
+    char curse[50];
+
+    char key_frag[50];
+
+} PuzzleItem;
+
+
+
+#define MAX_ITEMS 100
+
+#define MAX_LINE_LEN 256
+
+
+
+static PuzzleItem p_items[MAX_ITEMS];
+
+static int p_count = 0;
+
+static const char* TARGET_CSV = "AI1-2_C_Final.csv";
+
+
+
+static void load_csv_data(void) {
+
+    FILE* fp = NULL;
+
+
+
+    // [수정] fopen -> fopen_s (에러 코드 반환 방식)
+
+    errno_t err = fopen_s(&fp, TARGET_CSV, "r");
+
+
+
+    if (err != 0 || fp == NULL) {
+
+        printf("ERROR: [PlayerB] CSV file (%s) not found!\n", TARGET_CSV);
+
+        return;
+
+    }
+
+
+
+    char line[MAX_LINE_LEN];
+
+    // 헤더 스킵
+
+    if (!fgets(line, sizeof(line), fp)) { fclose(fp); return; }
+
+
+
+    p_count = 0;
+
+    while (fgets(line, sizeof(line), fp) && p_count < MAX_ITEMS) {
+
+        PuzzleItem* it = &p_items[p_count];
+
+        char temp[MAX_LINE_LEN];
+
+
+
+        // [수정] strcpy -> strcpy_s
+
+        strcpy_s(temp, sizeof(temp), line);
+
+
+
+        char* next_token = NULL; // strtok_s를 위한 문맥 포인터
+
+
+
+        // [수정] strtok -> strtok_s
+
+        char* tok = strtok_s(temp, ",", &next_token);
+
+        if (!tok) continue;
+
+        it->id = atoi(tok);
+
+
+
+        tok = strtok_s(NULL, ",", &next_token); if (!tok) continue;
+
+        strcpy_s(it->name, sizeof(it->name), tok);
+
+
+
+        tok = strtok_s(NULL, ",", &next_token); if (!tok) continue;
+
+        strcpy_s(it->slot, sizeof(it->slot), tok);
+
+
+
+        tok = strtok_s(NULL, ",", &next_token); if (!tok) continue;
+
+        it->atk = atoi(tok);
+
+
+
+        tok = strtok_s(NULL, ",", &next_token); if (!tok) continue;
+
+        it->def = atoi(tok);
+
+
+
+        tok = strtok_s(NULL, ",", &next_token); if (!tok) continue;
+
+        it->hp = atoi(tok);
+
+
+
+        tok = strtok_s(NULL, ",", &next_token); if (!tok) continue;
+
+        strcpy_s(it->curse, sizeof(it->curse), tok);
+
+
+
+        tok = strtok_s(NULL, ",", &next_token); if (!tok) continue;
+
+        tok[strcspn(tok, "\r\n")] = 0; // 개행 제거
+
+        strcpy_s(it->key_frag, sizeof(it->key_frag), tok);
+
+
+
+        p_count++;
+
+    }
+
+    fclose(fp);
+
+    printf("SYSTEM: [PlayerB] Loaded %d items from %s\n", p_count, TARGET_CSV);
+
+}
+
+
+
+// =================================================================================================
+
+// [PART 2] 문제 풀이 함수들 (5번, 6번만 남김)
+
+// =================================================================================================
+
+
+
+// -----------------------------------------------------------------------------------------
+
+// 🚨 [담당 파트 5번] 원거리 공격 (fseek 수정됨, 보안 함수 적용)
+
+// -----------------------------------------------------------------------------------------
+
+void solve_problem_5_range(int my_key) {
+
+    char final_key[100] = "";
+
+    int N = 0;
+
+
+
+    // 1. "K"가 포함된 아이템의 HP 찾기
+
+    for (int i = 0; i < p_count; i++) {
+
+        if (strstr(p_items[i].key_frag, "K") != NULL) {
+
+            N = p_items[i].hp;
+
+            break;
+
+        }
+
+    }
+
+
+
+    // 2. 파일 읽기 (중요: N-1 위치로 가야 정확히 읽힘!)
+
+    if (N > 0) {
+
+        FILE* fp = NULL;
+
+        // [수정] fopen_s 사용
+
+        if (fopen_s(&fp, TARGET_CSV, "rb") == 0 && fp != NULL) {
+
+
+
+            // 컴퓨터는 0부터 세므로 N번째 글자는 인덱스 N-1임
+
+            if (fseek(fp, N - 1, SEEK_SET) == 0) {
+
+                char t[6] = { 0 };
+
+                size_t r = fread(t, 1, 5, fp); // fread는 표준 함수라 보통 경고 없음
+
+                t[r] = '\0';
+
+
+
+                // [수정] sprintf -> sprintf_s
+
+                sprintf_s(final_key, sizeof(final_key), "\"%s\"", t);
+
+            }
+
+            fclose(fp);
+
+        }
+
+    }
+
+
+
+    // 3. 제출 및 결과 확인
+
+    attempt_skill_unlock(my_key, CMD_RANGE_ATTACK, final_key);
+
+
+
+    if (is_skill_unlocked(my_key, CMD_RANGE_ATTACK))
+
+        printf(">> [TEAM-BRAVO] 원거리(RANGE) 해금 성공! 정답: [%s]\n", final_key);
+
+    else
+
+        printf(">> [TEAM-BRAVO] 원거리(RANGE) 해금 실패... 시도한 키: [%s]\n", final_key);
+
+}
+
+
+
+// -----------------------------------------------------------------------------------------
+
+// 🚨 [담당 파트 6번] 축복 (strtok_s 적용)
+
+// -----------------------------------------------------------------------------------------
+
+void solve_problem_6_bless(int my_key) {
+
+    char final_key[100] = "";
+
+    char combined[2000] = { 0 };
+
+
+
+    // 1. Sword 포함 아이템의 Key 연결
+
+    for (int i = 0; i < p_count; i++) {
+
+        if (strstr(p_items[i].name, "Sword") != NULL) {
+
+            // [수정] strcat -> strcat_s
+
+            strcat_s(combined, sizeof(combined), p_items[i].key_frag);
+
+        }
+
+    }
+
+
+
+    // 2. 가장 긴 토큰 찾기
+
+    char temp[2000];
+
+    // [수정] strcpy -> strcpy_s
+
+    strcpy_s(temp, sizeof(temp), combined);
+
+
+
+    char* next_token = NULL; // strtok_s용 포인터
+
+
+
+    // [수정] strtok -> strtok_s
+
+    char* tok = strtok_s(temp, "*", &next_token);
+
+
+
+    char* best = NULL;
+
+    int max_len = -1;
+
+
+
+    while (tok) {
+
+        int len = (int)strlen(tok);
+
+        // 길이가 더 길 때만 갱신 (같으면 먼저 나온 것 유지)
+
+        if (len > max_len) {
+
+            max_len = len;
+
+            best = tok;
+
+        }
+
+        tok = strtok_s(NULL, "*", &next_token);
+
+    }
+
+
+
+    if (best) strcpy_s(final_key, sizeof(final_key), best);
+
+
+
+    // 3. 제출 및 결과 확인
+
+    attempt_skill_unlock(my_key, CMD_BLESS, final_key);
+
+
+
+    if (is_skill_unlocked(my_key, CMD_BLESS))
+
+        printf(">> [TEAM-BRAVO] 축복(BLESS) 해금 성공! 정답: [%s]\n", final_key);
+
+    else
+
+        printf(">> [TEAM-BRAVO] 축복(BLESS) 해금 실패... 시도한 키: [%s]\n", final_key);
+
+}
+
+
+
+
+
+// =================================================================================================
+
+// [PART 3] AI 로직 구현부
+
+// =================================================================================================
+
+
+
+static int get_dist(const Player* p1, const Player* p2) {
+
+    return abs(get_player_x(p1) - get_player_x(p2)) + abs(get_player_y(p1) - get_player_y(p2));
+
+}
+
+
+
+int player_b_strategy(const Player* my_info, const Player* opponent_info) {
+
+    int dist = get_dist(my_info, opponent_info);
+
+    int mp = get_player_mp(my_info);
+
+    int hp = get_player_hp(my_info);
+
+    int my_x = get_player_x(my_info);
+
+    int opp_x = get_player_x(opponent_info);
+
+    int my_y = get_player_y(my_info);
+
+    int opp_y = get_player_y(opponent_info);
+
+
+
+    // 1. 위기 관리
+
+    if (hp <= 2 && mp >= 1) {
+
+        if (mp >= 2 && is_skill_unlocked(my_secret_key_b, CMD_HEAL_ALL)) return CMD_HEAL_ALL;
+
+        return CMD_HEAL;
+
+    }
+
+
+
+    // 2. 근접 전투
+
+    if (dist <= 1) {
+
+        if (mp >= 2 && is_skill_unlocked(my_secret_key_b, CMD_STRIKE)) return CMD_STRIKE;
+
+        return CMD_ATTACK;
+
+    }
+
+
+
+    // 3. 원거리 견제 (거리 2) -> 원거리 공격
+
+    if (dist == 2 && mp >= 1) {
+
+        if (is_skill_unlocked(my_secret_key_b, CMD_RANGE_ATTACK)) return CMD_RANGE_ATTACK;
+
+    }
+
+
+
+    // 4. 가로/세로 공격
+
+    if (my_x == opp_x && mp >= 3 && is_skill_unlocked(my_secret_key_b, CMD_V_ATTACK)) return CMD_V_ATTACK;
+
+    if (my_y == opp_y && mp >= 3 && is_skill_unlocked(my_secret_key_b, CMD_H_ATTACK)) return CMD_H_ATTACK;
+
+
+
+    // 5. 추격
+
+    if (my_x < opp_x) return CMD_RIGHT;
+
+    if (my_x > opp_x) return CMD_LEFT;
+
+    if (my_y < opp_y) return CMD_DOWN;
+
+    if (my_y > opp_y) return CMD_UP;
+
+
+
+    return CMD_REST;
+
+}
+
+
+
+
+
+// =================================================================================================
+
+// [PART 4] 시스템 진입점
+
+// =================================================================================================
+
+
+
+void student2_ai_entry() {
+
+    // 1. 데이터 로드
+
+    load_csv_data();
+
+
+
+    // 2. AI 등록
+
+    my_secret_key_b = register_player_ai("TEAM-BRAVO", player_b_strategy);
+
+
+
+    printf("\n>>> TEAM-BRAVO 스킬 해금 시도 중 (담당 파트 5, 6) <<<\n");
+
+
+
+    // ----------------------------------------------------------------------------------
+
+    // 오직 5번과 6번만 실행됩니다.
+
+    // ----------------------------------------------------------------------------------
+
+    solve_problem_5_range(my_secret_key_b);
+
+    solve_problem_6_bless(my_secret_key_b);
+
+
+
+    printf("\n[확인용] 결과 확인 후 엔터 키를 누르세요...");
+
+    getchar(); // 멈춤
+
+}
