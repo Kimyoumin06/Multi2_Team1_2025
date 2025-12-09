@@ -1,0 +1,17 @@
+﻿  ansi_util.c
+  game.c
+  main.c
+D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\game.c(184,21): warning C4013: 'handle_command_dispatch'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\game.c(241,13): warning C4013: 'ApplyFinalDamage'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\game.c(359,16): warning C4013: 'HandleSecrete'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\game.c(372,5): warning C4013: 'printf'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\main.c(250,5): warning C4013: 'student1_ai_entry'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\main.c(251,5): warning C4013: 'student2_ai_entry'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\main.c(286,13): warning C4013: 'render_localized_flash'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+  PlayerA.c
+D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\PlayerA.c(60,9): warning C4013: 'set_custom_secrete_message'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+  PlayerB.c
+  render.c
+  sound.c
+  코드를 생성하고 있습니다...
+  C_Final_Team1.vcxproj -> D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\x64\Debug\C_Final_Team1.exe
