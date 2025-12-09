@@ -52,7 +52,7 @@ int ReadFile(Weapon list[], int* count) {
     FILE* fp;
     *count = 0;
 
-    if (fopen_s(&fp, "AI1-2_C_Final.csv", "r") != 0 || fp == NULL) {
+    if (fopen_s(&fp, "game_puzzle_en.csv", "r") != 0 || fp == NULL) {
         printf("[ReadFile] 오류: AI1-2_C_Final.csv 파일을 찾을 수 없습니다.\n");
         return 0;
     }
