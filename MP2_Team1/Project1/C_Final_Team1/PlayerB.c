@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MAX_Weapon 100
+
+// 아이템 정보를 저장할 구조체 (PlayerB.c 원본 사용)
 typedef struct {
     int id;
     char name[50];
@@ -14,16 +17,14 @@ typedef struct {
     char KEY_FRAG[20];
 }Weapon;
 
-#define MAX_Weapon 100
-
-// 거리 계산 함수
+// PlayerB.c 원본의 거리 계산 함수
 static int calculate_distance(const Player* p1, const Player* p2) {
     int dx = abs(get_player_x(p1) - get_player_x(p2));
     int dy = abs(get_player_y(p1) - get_player_y(p2));
     return dx + dy;
 }
 
-// 간단한 AI 함수
+// PlayerB.c 원본의 간단한 AI 함수
 int simple_killer_ai2(const Player* my_info, const Player* opponent_info) {
     int distance = calculate_distance(my_info, opponent_info);
     int my_x = get_player_x(my_info);
@@ -46,16 +47,18 @@ int simple_killer_ai2(const Player* my_info, const Player* opponent_info) {
     return CMD_ATTACK;
 }
 
-// CSV 파일 읽기
+// PlayerB.c 원본의 CSV 파일 읽기 함수
 int ReadFile(Weapon list[], int* count) {
     FILE* fp;
     *count = 0;
 
     if (fopen_s(&fp, "AI1-2_C_Final.csv", "r") != 0 || fp == NULL) {
+        printf("[ReadFile] 오류: AI1-2_C_Final.csv 파일을 찾을 수 없습니다.\n");
         return 0;
     }
 
     char line[256];
+    // 헤더 건너뛰기
     if (fgets(line, sizeof(line), fp) == NULL) {
         fclose(fp);
         return 0;
@@ -109,88 +112,167 @@ int ReadFile(Weapon list[], int* count) {
     return 1;
 }
 
-// P2 등록 함수
+// ID로 아이템을 찾아주는 도우미 함수 (20251413.txt 기반)
+Weapon* find_item_by_id(int id, Weapon list[], int count) {
+    for (int i = 0; i < count; i++) {
+        if (list[i].id == id) return &list[i];
+    }
+    return NULL;
+}
+
+
+// P2 등록 함수 (TEAM-BRAVO의 문제 풀이 로직 통합)
 void student2_ai_entry() {
 
-    // PlayerA와 동일한 방식으로 AI 등록
-    int my_secret_key = register_player_ai("TEAM-1", simple_killer_ai2);
+    // 1. 내 캐릭터 등록 (PlayerB.c 원본은 "TEAM-1"이었으나, 20251413.txt에 따라 "TEAM-BRAVO"로 변경)
+    int my_secret_key = register_player_ai("TEAM-BRAVO", simple_killer_ai2);
 
-    // CSV 파일 읽기
+    // 2. CSV 파일 읽기
     Weapon list[MAX_Weapon];
     int count = 0;
 
     if (!ReadFile(list, &count)) {
-        printf("TEAM-1 : CSV 파일 읽기 실패\n");
+        printf("TEAM-BRAVO : CSV 파일 읽기 실패\n");
         return;
     }
 
     // ------------------------------------------------------------------
-    // [COMMAND UNLOCK SECTION] - PlayerA.c와 동일한 구조
+    // [COMMAND UNLOCK SECTION] - 문제 1, 2, 3, 4 통합
     // ------------------------------------------------------------------
 
-    // 1번 문제: CMD_POISON 해금
-    int filtered_indices[MAX_Weapon];
-    int filtered_count = 0;
+    // ******************************************************************
+    // PlayerB.c 원본 - 1번 문제: CMD_POISON 해금 (20251402 김유민)
+    // ******************************************************************
+    int filtered_indices_1[MAX_Weapon];
+    int filtered_count_1 = 0;
 
     for (int i = 0; i < count; i++) {
         if (list[i].ATK >= 4 && list[i].DEF <= 5 && list[i].HP <= 100) {
-            filtered_indices[filtered_count++] = i;
+            filtered_indices_1[filtered_count_1++] = i;
         }
     }
 
-    char result[500] = "";
-    for (int i = filtered_count - 1; i >= 0; i--) {
-        int idx = filtered_indices[i];
-        if (strlen(result) > 0) {
-            strcat_s(result, sizeof(result), "|");
+    char result_1[500] = "";
+    for (int i = filtered_count_1 - 1; i >= 0; i--) {
+        int idx = filtered_indices_1[i];
+        if (strlen(result_1) > 0) {
+            strcat_s(result_1, sizeof(result_1), "|");
         }
-        strcat_s(result, sizeof(result), list[idx].name);
+        strcat_s(result_1, sizeof(result_1), list[idx].name);
     }
 
-    attempt_skill_unlock(my_secret_key, CMD_POISON, result);
+    attempt_skill_unlock(my_secret_key, CMD_POISON, result_1);
     if (is_skill_unlocked(my_secret_key, CMD_POISON))
-        printf("TEAM-1 : CMD_POISON 해금 완료\n");
+        printf("TEAM-BRAVO : CMD_POISON 해금 완료\n");
     else
-        printf("TEAM-1 : CMD_POISON 해금 실패 ㅜㅜ\n");
+        printf("TEAM-BRAVO : CMD_POISON 해금 실패 ㅜㅜ\n");
 
-    // ------------------------------------------------------------------
-
-    // 2번 문제: CMD_STRIKE 해금
+    // ******************************************************************
+    // PlayerB.c 원본 - 2번 문제: CMD_STRIKE 해금 (20251402 김유민)
+    // ******************************************************************
     int total_index = 0;
 
-    // SLOT이 "W"인 아이템 찾기
     for (int i = 0; i < count; i++) {
         if (strcmp(list[i].slot, "W") == 0) {
-            // KEY_FRAG에서 'T' 찾기
             char* pos = strchr(list[i].KEY_FRAG, 'T');
 
             if (pos != NULL) {
-                // 'T'가 있으면 인덱스 계산 (포인터 차이)
                 int index = (int)(pos - list[i].KEY_FRAG);
                 total_index += index;
             }
             else {
-                // 'T'가 없으면 0 추가
                 total_index += 0;
             }
         }
     }
 
-    // 정수를 문자열로 변환 후 "key" 붙이기
-    char result2[50];
-    sprintf_s(result2, sizeof(result2), "%d", total_index);
-    strcat_s(result2, sizeof(result2), "key");
+    char result_2[50];
+    sprintf_s(result_2, sizeof(result_2), "%d", total_index);
+    strcat_s(result_2, sizeof(result_2), "key");
 
-    attempt_skill_unlock(my_secret_key, CMD_STRIKE, result2);
+    attempt_skill_unlock(my_secret_key, CMD_STRIKE, result_2);
     if (is_skill_unlocked(my_secret_key, CMD_STRIKE))
-        printf("TEAM-1 : CMD_STRIKE 해금 완료\n");
+        printf("TEAM-BRAVO : CMD_STRIKE 해금 완료\n");
     else
-        printf("TEAM-1 : CMD_STRIKE 해금 실패 ㅜㅜ\n");
+        printf("TEAM-BRAVO : CMD_STRIKE 해금 실패 ㅜㅜ\n");
+
+    // ******************************************************************
+    // 20251413.txt - 3번 문제: CMD_BLINK_UP (점멸) 해금 (*A**C**F**T* 만들기)
+    // ******************************************************************
+    char final_key_3[100] = "";
+
+    // 조건 1: (202번 방어력 + 208번 방어력)과 같은 HP를 가진 아이템 -> 'A'
+    Weapon* i202 = find_item_by_id(202, list, count);
+    Weapon* i208 = find_item_by_id(208, list, count);
+    int target_hp = (i202 && i208) ? (i202->DEF + i208->DEF) : 0;
+    for (int i = 0; i < count; i++) {
+        if (list[i].HP == target_hp && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+            strcat_s(final_key_3, sizeof(final_key_3), list[i].KEY_FRAG);
+            break;
+        }
+    }
+
+    // 조건 2: (205번 공격력 * 212번 공격력)과 같은 ATK를 가진 아이템 중 마지막 -> 'C'
+    Weapon* i205 = find_item_by_id(205, list, count);
+    Weapon* i212 = find_item_by_id(212, list, count);
+    int target_atk = (i205 && i212) ? (i205->ATK * i212->ATK) : 0;
+    int last_match_idx = -1;
+    for (int i = 0; i < count; i++) {
+        if (list[i].ATK == target_atk && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+            last_match_idx = i;
+        }
+    }
+    if (last_match_idx != -1) {
+        strcat_s(final_key_3, sizeof(final_key_3), list[last_match_idx].KEY_FRAG);
+    }
+
+    // 조건 3: CURSE에 "C_01"이 포함된 아이템 중 마지막 -> 'F'
+    int last_curse_idx = -1;
+    for (int i = 0; i < count; i++) {
+        if (strstr(list[i].CURSE, "C_01") && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+            last_curse_idx = i;
+        }
+    }
+    if (last_curse_idx != -1) strcat_s(final_key_3, sizeof(final_key_3), list[last_curse_idx].KEY_FRAG);
+
+    // 조건 4: 이름(NAME)이 'I'로 시작하는 아이템 중 처음 -> 'T'
+    for (int i = 0; i < count; i++) {
+        if (list[i].name[0] == 'I' && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+            strcat_s(final_key_3, sizeof(final_key_3), list[i].KEY_FRAG);
+            break;
+        }
+    }
+
+    attempt_skill_unlock(my_secret_key, CMD_BLINK_UP, final_key_3);
+    if (is_skill_unlocked(my_secret_key, CMD_BLINK_UP))
+        printf(">> [TEAM-BRAVO] 점멸(BLINK) 해금 성공! 정답: [%s]\n", final_key_3);
+    else
+        printf(">> [TEAM-BRAVO] 점멸(BLINK) 해금 실패... 시도한 키: [%s]\n", final_key_3);
+
+
+    // ******************************************************************
+    // 20251413.txt - 4번 문제: CMD_HEAL_ALL (회복2) 해금 (*H* 만들기)
+    // ******************************************************************
+    char final_key_4[100] = "";
+    // 조건: 이름(NAME)이 슬롯(SLOT)보다 사전순으로 뒤거나 같은(>=0) 첫 번째 아이템 -> 'H'
+    for (int i = 0; i < count; i++) {
+        if (strcmp(list[i].name, list[i].slot) >= 0) {
+            if (strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+                strcpy_s(final_key_4, sizeof(final_key_4), list[i].KEY_FRAG);
+                break;
+            }
+        }
+    }
+
+    attempt_skill_unlock(my_secret_key, CMD_HEAL_ALL, final_key_4);
+    if (is_skill_unlocked(my_secret_key, CMD_HEAL_ALL))
+        printf(">> [TEAM-BRAVO] 회복2(HEAL_ALL) 해금 성공! 정답: [%s]\n", final_key_4);
+    else
+        printf(">> [TEAM-BRAVO] 회복2(HEAL_ALL) 해금 실패... 시도한 키: [%s]\n", final_key_4);
 
     // ------------------------------------------------------------------
 
-    printf("TEAM-1 : 플레이어 초기화 완료. 아무키나 누르시오.\n");
-
-    // PlayerA.c와 동일하게 getchar() 호출
+    printf("TEAM-BRAVO : 플레이어 초기화 및 스킬 해금 완료. 엔터를 누르면 시작합니다.\n");
+    // PlayerB.c와 동일하게 getchar() 호출
     getchar();
 }
