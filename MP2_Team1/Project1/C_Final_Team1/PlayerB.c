@@ -125,14 +125,14 @@ Weapon* find_item_by_id(int id, Weapon list[], int count) {
 void student2_ai_entry() {
 
     // 1. 내 캐릭터 등록 (PlayerB.c 원본은 "TEAM-1"이었으나, 20251413.txt에 따라 "TEAM-BRAVO"로 변경)
-    int my_secret_key = register_player_ai("TEAM-BRAVO", simple_killer_ai2);
+    int my_secret_key = register_player_ai("TEAM-1", simple_killer_ai2);
 
     // 2. CSV 파일 읽기
     Weapon list[MAX_Weapon];
     int count = 0;
 
     if (!ReadFile(list, &count)) {
-        printf("TEAM-BRAVO : CSV 파일 읽기 실패\n");
+        printf("TEAM-1 : CSV 파일 읽기 실패\n");
         return;
     }
 
