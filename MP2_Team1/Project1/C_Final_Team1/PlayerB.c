@@ -163,9 +163,9 @@ void student2_ai_entry() {
 
     attempt_skill_unlock(my_secret_key, CMD_POISON, result_1);
     if (is_skill_unlocked(my_secret_key, CMD_POISON))
-        printf("TEAM-BRAVO : CMD_POISON 해금 완료\n");
+        printf("TEAM-1 : CMD_POISON 해금 완료\n");
     else
-        printf("TEAM-BRAVO : CMD_POISON 해금 실패 ㅜㅜ\n");
+        printf("TEAM-1 : CMD_POISON 해금 실패 ㅜㅜ\n");
 
     // ******************************************************************
     // PlayerB.c 원본 - 2번 문제: CMD_STRIKE 해금 (20251402 김유민)
@@ -192,9 +192,9 @@ void student2_ai_entry() {
 
     attempt_skill_unlock(my_secret_key, CMD_STRIKE, result_2);
     if (is_skill_unlocked(my_secret_key, CMD_STRIKE))
-        printf("TEAM-BRAVO : CMD_STRIKE 해금 완료\n");
+        printf("TEAM-1 : CMD_STRIKE 해금 완료\n");
     else
-        printf("TEAM-BRAVO : CMD_STRIKE 해금 실패 ㅜㅜ\n");
+        printf("TEAM-1 : CMD_STRIKE 해금 실패 ㅜㅜ\n");
 
     // ******************************************************************
     // 20251413.txt - 3번 문제: CMD_BLINK_UP (점멸) 해금 (*A**C**F**T* 만들기)
@@ -245,9 +245,9 @@ void student2_ai_entry() {
 
     attempt_skill_unlock(my_secret_key, CMD_BLINK_UP, final_key_3);
     if (is_skill_unlocked(my_secret_key, CMD_BLINK_UP))
-        printf(">> [TEAM-BRAVO] 점멸(BLINK) 해금 성공! 정답: [%s]\n", final_key_3);
+        printf("TEAM-1 : CMD_BLINK 해금 성공!\n");
     else
-        printf(">> [TEAM-BRAVO] 점멸(BLINK) 해금 실패... 시도한 키: [%s]\n", final_key_3);
+        printf("TEAM-1 : CMD_BLINK 해금 실패 ㅜㅜ\n");
 
 
     // ******************************************************************
@@ -266,13 +266,13 @@ void student2_ai_entry() {
 
     attempt_skill_unlock(my_secret_key, CMD_HEAL_ALL, final_key_4);
     if (is_skill_unlocked(my_secret_key, CMD_HEAL_ALL))
-        printf(">> [TEAM-BRAVO] 회복2(HEAL_ALL) 해금 성공! 정답: [%s]\n", final_key_4);
+        printf("TEAM-1 : CMD_HEAL_ALL 해금 성공!\n");
     else
-        printf(">> [TEAM-BRAVO] 회복2(HEAL_ALL) 해금 실패... 시도한 키: [%s]\n", final_key_4);
+        printf("TEAM-1 : CMD_HEAL_ALL 해금 실패 ㅜㅜ\n");
 
     // ------------------------------------------------------------------
 
-    printf("TEAM-BRAVO : 플레이어 초기화 및 스킬 해금 완료. 엔터를 누르면 시작합니다.\n");
+    printf("TEAM-1 : 플레이어 초기화 완료. 아무키나 누르시오.\n");
     // PlayerB.c와 동일하게 getchar() 호출
     getchar();
 }
