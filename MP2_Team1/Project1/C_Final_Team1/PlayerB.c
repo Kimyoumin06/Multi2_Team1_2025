@@ -1,11 +1,13 @@
-#include "api.h"
+ï»¿#include "api.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stddef.h> // size_t ì •ì˜ í¬í•¨
+#include <ctype.h>  // isvowelì„ ëŒ€ì²´í•˜ê¸° ìœ„í•´ strcspn ì‚¬ìš© (ë¬¸ì œ 7/8 ë¡œì§ì— í•„ìš”í•  ìˆ˜ ìˆìŒ)
 
-#define MAX_Weapon 100
+#define MAX_Weapon 100 // PlayerB.c ì›ë³¸
 
-// ¾ÆÀÌÅÛ Á¤º¸¸¦ ÀúÀåÇÒ ±¸Á¶Ã¼ (PlayerB.c ¿øº» »ç¿ë)
+// ì•„ì´í…œ ì •ë³´ë¥¼ ì €ì¥í•  êµ¬ì¡°ì²´ (PlayerB.c ì›ë³¸ ì‚¬ìš©, ë²„í¼ í¬ê¸°ë§Œ ë„‰ë„‰í•˜ê²Œ ì¡°ì •)
 typedef struct {
     int id;
     char name[50];
@@ -13,266 +15,527 @@ typedef struct {
     int ATK;
     int DEF;
     int HP;
-    char CURSE[20];
-    char KEY_FRAG[20];
+    char CURSE[50]; // ì•ˆì „ì„ ìœ„í•´ 50ìœ¼ë¡œ í™•ì¥
+    char KEY_FRAG[50]; // ì•ˆì „ì„ ìœ„í•´ 50ìœ¼ë¡œ í™•ì¥
 }Weapon;
 
-// PlayerB.c ¿øº»ÀÇ °Å¸® °è»ê ÇÔ¼ö
-static int calculate_distance(const Player* p1, const Player* p2) {
-    int dx = abs(get_player_x(p1) - get_player_x(p2));
-    int dy = abs(get_player_y(p1) - get_player_y(p2));
-    return dx + dy;
-}
+// ì „ì—­ ë³€ìˆ˜: ëª¨ë“  ë¬¸ì œ í’€ì´ ë° AIì—ì„œ ì ‘ê·¼ ê°€ëŠ¥í•˜ë„ë¡ ë³€ê²½
+Weapon list[MAX_Weapon];
+int count = 0;
+int my_secret_key; // PlayerB.c ì›ë³¸ì—ì„œ my_secret_keyë¡œ ë“±ë¡ë¨
 
-// PlayerB.c ¿øº»ÀÇ °£´ÜÇÑ AI ÇÔ¼ö
-int simple_killer_ai2(const Player* my_info, const Player* opponent_info) {
-    int distance = calculate_distance(my_info, opponent_info);
-    int my_x = get_player_x(my_info);
-    int my_y = get_player_y(my_info);
-    int opp_x = get_player_x(opponent_info);
-    int opp_y = get_player_y(opponent_info);
+// CSV íŒŒì¼ëª… (AI1-2_C_Final.docx ê¸°ì¤€)
+static const char* TARGET_CSV = "game_puzzle_en.csv";
 
-    if (distance <= 1) {
-        return CMD_ATTACK;
+    // =================================================================================================
+    // [PART 1] ê³µí†µ í•¨ìˆ˜ (CSV ë¡œë“œ ë° ê±°ë¦¬ ê³„ì‚°)
+    // =================================================================================================
+
+    // PlayerB.c ì›ë³¸ì˜ ê±°ë¦¬ ê³„ì‚° í•¨ìˆ˜
+    static int calculate_distance(const Player* p1, const Player* p2) {
+        int dx = abs(get_player_x(p1) - get_player_x(p2));
+        int dy = abs(get_player_y(p1) - get_player_y(p2));
+        return dx + dy;
     }
 
-    if (my_x != opp_x) {
-        return (my_x < opp_x) ? CMD_RIGHT : CMD_LEFT;
+    // IDë¡œ ì•„ì´í…œì„ ì°¾ì•„ì£¼ëŠ” ë„ìš°ë¯¸ í•¨ìˆ˜ (ì „ì—­ list, count ì‚¬ìš©)
+    Weapon* find_item_by_id(int id) {
+        for (int i = 0; i < count; i++) {
+            if (list[i].id == id) return &list[i];
+        }
+        return NULL;
     }
 
-    if (my_y != opp_y) {
-        return (my_y < opp_y) ? CMD_DOWN : CMD_UP;
-    }
+    // PlayerB.c ì›ë³¸ì˜ CSV íŒŒì¼ ì½ê¸° í•¨ìˆ˜ (ì „ì—­ list, count ì‚¬ìš©í•˜ë„ë¡ ìˆ˜ì •)
+    void ReadFile(void) {
+        FILE* fp;
 
-    return CMD_ATTACK;
-}
+        // TARGET_CSV (game_puzzle_en.csv) ì‚¬ìš©
+        if (fopen_s(&fp, TARGET_CSV, "r") != 0 || fp == NULL) {
+            printf("[ReadFile] ì˜¤ë¥˜: CSV íŒŒì¼ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤. (%s)\n", TARGET_CSV);
+            return;
+        }
 
-// PlayerB.c ¿øº»ÀÇ CSV ÆÄÀÏ ÀĞ±â ÇÔ¼ö
-int ReadFile(Weapon list[], int* count) {
-    FILE* fp;
-    *count = 0;
+        char line[256];
+        // í—¤ë” ê±´ë„ˆë›°ê¸°
+        if (fgets(line, sizeof(line), fp) == NULL) {
+            fclose(fp);
+            return;
+        }
 
-    if (fopen_s(&fp, "game_puzzle_en.csv", "r") != 0 || fp == NULL) {
-        printf("[ReadFile] ¿À·ù: AI1-2_C_Final.csv ÆÄÀÏÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù.\n");
-        return 0;
-    }
+        count = 0;
+        while (fgets(line, sizeof(line), fp) != NULL && count < MAX_Weapon) {
+            size_t len = strlen(line);
+            // ê°œí–‰ ë¬¸ì ì œê±°
+            while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
+                line[len - 1] = '\0';
+                len--;
+            }
+            if (len == 0) continue;
 
-    char line[256];
-    // Çì´õ °Ç³Ê¶Ù±â
-    if (fgets(line, sizeof(line), fp) == NULL) {
+            char* context = NULL;
+            // strtok_s ì‚¬ìš©
+            char* token = strtok_s(line, ",", &context);
+            if (!token) continue;
+            list[count].id = atoi(token);
+
+            token = strtok_s(NULL, ",", &context);
+            if (!token) continue;
+            strcpy_s(list[count].name, sizeof(list[count].name), token);
+
+            token = strtok_s(NULL, ",", &context);
+            if (!token) continue;
+            strcpy_s(list[count].slot, sizeof(list[count].slot), token);
+
+            token = strtok_s(NULL, ",", &context);
+            if (!token) continue;
+            list[count].ATK = atoi(token);
+
+            token = strtok_s(NULL, ",", &context);
+            if (!token) continue;
+            list[count].DEF = atoi(token);
+
+            token = strtok_s(NULL, ",", &context);
+            if (!token) continue;
+            list[count].HP = atoi(token);
+
+            token = strtok_s(NULL, ",", &context);
+            if (!token) continue;
+            strcpy_s(list[count].CURSE, sizeof(list[count].CURSE), token);
+
+            token = strtok_s(NULL, ",", &context);
+            if (!token) continue;
+            strcpy_s(list[count].KEY_FRAG, sizeof(list[count].KEY_FRAG), token);
+
+            count++;
+        }
+
         fclose(fp);
-        return 0;
+        printf("SYSTEM: [PlayerB] Loaded %d items from %s\n", count, TARGET_CSV);
     }
 
-    while (fgets(line, sizeof(line), fp) != NULL && *count < MAX_Weapon) {
-        size_t len = strlen(line);
-        while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
-            line[len - 1] = '\0';
-            len--;
-        }
-        if (len == 0) continue;
 
-        char* context = NULL;
-        char* token = strtok_s(line, ",", &context);
-        if (!token) continue;
-        list[*count].id = atoi(token);
+    // =================================================================================================
+    // [PART 2] ë¬¸ì œ í’€ì´ í•¨ìˆ˜ë“¤ (1~8ë²ˆ)
+    // =================================================================================================
 
-        token = strtok_s(NULL, ",", &context);
-        if (!token) continue;
-        strcpy_s(list[*count].name, sizeof(list[*count].name), token);
+    // -----------------------------------------------------------------------------------------
+    // [ë¬¸ì œ 1] CMD_POISON í•´ê¸ˆ (PlayerB.c ì›ë³¸ ë¡œì§ - Skill 6: ë…í•´ê¸ˆ)
+    // -----------------------------------------------------------------------------------------
+    void solve_problem_1_poison(int my_key) {
+        int filtered_indices[MAX_Weapon];
+        int filtered_count = 0;
 
-        token = strtok_s(NULL, ",", &context);
-        if (!token) continue;
-        strcpy_s(list[*count].slot, sizeof(list[*count].slot), token);
-
-        token = strtok_s(NULL, ",", &context);
-        if (!token) continue;
-        list[*count].ATK = atoi(token);
-
-        token = strtok_s(NULL, ",", &context);
-        if (!token) continue;
-        list[*count].DEF = atoi(token);
-
-        token = strtok_s(NULL, ",", &context);
-        if (!token) continue;
-        list[*count].HP = atoi(token);
-
-        token = strtok_s(NULL, ",", &context);
-        if (!token) continue;
-        strcpy_s(list[*count].CURSE, sizeof(list[*count].CURSE), token);
-
-        token = strtok_s(NULL, ",", &context);
-        if (!token) continue;
-        strcpy_s(list[*count].KEY_FRAG, sizeof(list[*count].KEY_FRAG), token);
-
-        (*count)++;
-    }
-
-    fclose(fp);
-    return 1;
-}
-
-// ID·Î ¾ÆÀÌÅÛÀ» Ã£¾ÆÁÖ´Â µµ¿ì¹Ì ÇÔ¼ö (20251413.txt ±â¹İ)
-Weapon* find_item_by_id(int id, Weapon list[], int count) {
-    for (int i = 0; i < count; i++) {
-        if (list[i].id == id) return &list[i];
-    }
-    return NULL;
-}
-
-
-// P2 µî·Ï ÇÔ¼ö (TEAM-BRAVOÀÇ ¹®Á¦ Ç®ÀÌ ·ÎÁ÷ ÅëÇÕ)
-void student2_ai_entry() {
-
-    // 1. ³» Ä³¸¯ÅÍ µî·Ï (PlayerB.c ¿øº»Àº "TEAM-1"ÀÌ¾úÀ¸³ª, 20251413.txt¿¡ µû¶ó "TEAM-BRAVO"·Î º¯°æ)
-    int my_secret_key = register_player_ai("TEAM-1", simple_killer_ai2);
-
-    // 2. CSV ÆÄÀÏ ÀĞ±â
-    Weapon list[MAX_Weapon];
-    int count = 0;
-
-    if (!ReadFile(list, &count)) {
-        printf("TEAM-1 : CSV ÆÄÀÏ ÀĞ±â ½ÇÆĞ\n");
-        return;
-    }
-
-    // ------------------------------------------------------------------
-    // [COMMAND UNLOCK SECTION] - ¹®Á¦ 1, 2, 3, 4 ÅëÇÕ
-    // ------------------------------------------------------------------
-
-    // ******************************************************************
-    // PlayerB.c ¿øº» - 1¹ø ¹®Á¦: CMD_POISON ÇØ±İ (20251402 ±èÀ¯¹Î)
-    // ******************************************************************
-    int filtered_indices_1[MAX_Weapon];
-    int filtered_count_1 = 0;
-
-    for (int i = 0; i < count; i++) {
-        if (list[i].ATK >= 4 && list[i].DEF <= 5 && list[i].HP <= 100) {
-            filtered_indices_1[filtered_count_1++] = i;
-        }
-    }
-
-    char result_1[500] = "";
-    for (int i = filtered_count_1 - 1; i >= 0; i--) {
-        int idx = filtered_indices_1[i];
-        if (strlen(result_1) > 0) {
-            strcat_s(result_1, sizeof(result_1), "|");
-        }
-        strcat_s(result_1, sizeof(result_1), list[idx].name);
-    }
-
-    attempt_skill_unlock(my_secret_key, CMD_POISON, result_1);
-    if (is_skill_unlocked(my_secret_key, CMD_POISON))
-        printf("TEAM-1 : CMD_POISON ÇØ±İ ¿Ï·á\n");
-    else
-        printf("TEAM-1 : CMD_POISON ÇØ±İ ½ÇÆĞ ¤Ì¤Ì\n");
-
-    // ******************************************************************
-    // PlayerB.c ¿øº» - 2¹ø ¹®Á¦: CMD_STRIKE ÇØ±İ (20251402 ±èÀ¯¹Î)
-    // ******************************************************************
-    int total_index = 0;
-
-    for (int i = 0; i < count; i++) {
-        if (strcmp(list[i].slot, "W") == 0) {
-            char* pos = strchr(list[i].KEY_FRAG, 'T');
-
-            if (pos != NULL) {
-                int index = (int)(pos - list[i].KEY_FRAG);
-                total_index += index;
-            }
-            else {
-                total_index += 0;
+        for (int i = 0; i < count; i++) {
+            if (list[i].ATK >= 4 && list[i].DEF <= 5 && list[i].HP <= 100) {
+                filtered_indices[filtered_count++] = i;
             }
         }
-    }
 
-    char result_2[50];
-    sprintf_s(result_2, sizeof(result_2), "%d", total_index);
-    strcat_s(result_2, sizeof(result_2), "key");
-
-    attempt_skill_unlock(my_secret_key, CMD_STRIKE, result_2);
-    if (is_skill_unlocked(my_secret_key, CMD_STRIKE))
-        printf("TEAM-1 : CMD_STRIKE ÇØ±İ ¿Ï·á\n");
-    else
-        printf("TEAM-1 : CMD_STRIKE ÇØ±İ ½ÇÆĞ ¤Ì¤Ì\n");
-
-    // ******************************************************************
-    // 20251413.txt - 3¹ø ¹®Á¦: CMD_BLINK_UP (Á¡¸ê) ÇØ±İ (*A**C**F**T* ¸¸µé±â)
-    // ******************************************************************
-    char final_key_3[100] = "";
-
-    // Á¶°Ç 1: (202¹ø ¹æ¾î·Â + 208¹ø ¹æ¾î·Â)°ú °°Àº HP¸¦ °¡Áø ¾ÆÀÌÅÛ -> 'A'
-    Weapon* i202 = find_item_by_id(202, list, count);
-    Weapon* i208 = find_item_by_id(208, list, count);
-    int target_hp = (i202 && i208) ? (i202->DEF + i208->DEF) : 0;
-    for (int i = 0; i < count; i++) {
-        if (list[i].HP == target_hp && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
-            strcat_s(final_key_3, sizeof(final_key_3), list[i].KEY_FRAG);
-            break;
+        char result[500] = "";
+        // íŒŒì¼ì— ë“±ì¥í•˜ëŠ” ì—­ìˆœìœ¼ë¡œ ì •ë ¬ 
+        for (int i = filtered_count - 1; i >= 0; i--) {
+            int idx = filtered_indices[i];
+            if (strlen(result) > 0) {
+                strcat_s(result, sizeof(result), "|");
+            }
+            strcat_s(result, sizeof(result), list[idx].name);
         }
+
+        attempt_skill_unlock(my_key, CMD_POISON, result);
+        if (is_skill_unlocked(my_key, CMD_POISON))
+            printf("TEAM-1 (ë¬¸ì œ 1/Skill 6) : CMD_POISON í•´ê¸ˆ ì™„ë£Œ\n");
+        else
+            printf("TEAM-1 (ë¬¸ì œ 1/Skill 6) : CMD_POISON í•´ê¸ˆ ì‹¤íŒ¨ ã…œã…œ\n");
     }
 
-    // Á¶°Ç 2: (205¹ø °ø°İ·Â * 212¹ø °ø°İ·Â)°ú °°Àº ATK¸¦ °¡Áø ¾ÆÀÌÅÛ Áß ¸¶Áö¸· -> 'C'
-    Weapon* i205 = find_item_by_id(205, list, count);
-    Weapon* i212 = find_item_by_id(212, list, count);
-    int target_atk = (i205 && i212) ? (i205->ATK * i212->ATK) : 0;
-    int last_match_idx = -1;
-    for (int i = 0; i < count; i++) {
-        if (list[i].ATK == target_atk && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
-            last_match_idx = i;
+    // -----------------------------------------------------------------------------------------
+    // [ë¬¸ì œ 2] CMD_STRIKE í•´ê¸ˆ (PlayerB.c ì›ë³¸ ë¡œì§ - Skill 7: ê°•íƒ€)
+    // -----------------------------------------------------------------------------------------
+    void solve_problem_2_strike(int my_key) {
+        int total_index = 0;
+
+        for (int i = 0; i < count; i++) {
+            if (strcmp(list[i].slot, "W") == 0) {
+                char* pos = strchr(list[i].KEY_FRAG, 'T');
+
+                if (pos != NULL) {
+                    int index = (int)(pos - list[i].KEY_FRAG);
+                    total_index += index;
+                }
+            }
         }
-    }
-    if (last_match_idx != -1) {
-        strcat_s(final_key_3, sizeof(final_key_3), list[last_match_idx].KEY_FRAG);
+
+        char result[50];
+        sprintf_s(result, sizeof(result), "%d", total_index);
+        strcat_s(result, sizeof(result), "key");
+
+        attempt_skill_unlock(my_key, CMD_STRIKE, result);
+        if (is_skill_unlocked(my_key, CMD_STRIKE))
+            printf("TEAM-1 (ë¬¸ì œ 2/Skill 7) : CMD_STRIKE í•´ê¸ˆ ì™„ë£Œ\n");
+        else
+            printf("TEAM-1 (ë¬¸ì œ 2/Skill 7) : CMD_STRIKE í•´ê¸ˆ ì‹¤íŒ¨ ã…œã…œ\n");
     }
 
-    // Á¶°Ç 3: CURSE¿¡ "C_01"ÀÌ Æ÷ÇÔµÈ ¾ÆÀÌÅÛ Áß ¸¶Áö¸· -> 'F'
-    int last_curse_idx = -1;
-    for (int i = 0; i < count; i++) {
-        if (strstr(list[i].CURSE, "C_01") && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
-            last_curse_idx = i;
+    // -----------------------------------------------------------------------------------------
+    // [ë¬¸ì œ 3] CMD_BLINK_UP í•´ê¸ˆ (PlayerB.c ì›ë³¸ ë¡œì§ - Skill 8~11: ì ë©¸)
+    // -----------------------------------------------------------------------------------------
+    void solve_problem_3_blink(int my_key) {
+        char final_key[100] = "";
+
+        Weapon* i202 = find_item_by_id(202);
+        Weapon* i208 = find_item_by_id(208);
+        int target_hp = (i202 && i208) ? (i202->DEF + i208->DEF) : 0;
+            for (int i = 0; i < count; i++) {
+                if (list[i].HP == target_hp && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+                    strcat_s(final_key, sizeof(final_key), list[i].KEY_FRAG);
+                        break;
+                }
+            }
+
+            Weapon* i205 = find_item_by_id(205);
+            Weapon* i212 = find_item_by_id(212);
+            int target_atk = (i205 && i212) ? (i205->ATK * i212->ATK) : 0;
+                int last_match_idx = -1;
+                for (int i = 0; i < count; i++) {
+                    if (list[i].ATK == target_atk && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+                        last_match_idx = i;
+                    }
+                }
+                if (last_match_idx != -1) {
+                    strcat_s(final_key, sizeof(final_key), list[last_match_idx].KEY_FRAG);
+                }
+
+                int last_curse_idx = -1;
+                for (int i = 0; i < count; i++) {
+                    if (strstr(list[i].CURSE, "C_01") && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+                        last_curse_idx = i;
+                    }
+                }
+                if (last_curse_idx != -1) strcat_s(final_key, sizeof(final_key), list[last_curse_idx].KEY_FRAG);
+
+                    for (int i = 0; i < count; i++) {
+                        if (list[i].name[0] == 'I' && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+                            strcat_s(final_key, sizeof(final_key), list[i].KEY_FRAG);
+                                break;
+                        }
+                    }
+
+                    attempt_skill_unlock(my_key, CMD_BLINK_UP, final_key);
+                    if (is_skill_unlocked(my_key, CMD_BLINK_UP))
+                        printf("TEAM-1 (ë¬¸ì œ 3/Skill 8) : CMD_BLINK í•´ê¸ˆ ì„±ê³µ!\n");
+                    else
+                        printf("TEAM-1 (ë¬¸ì œ 3/Skill 8) : CMD_BLINK í•´ê¸ˆ ì‹¤íŒ¨ ã…œã…œ\n");
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // [ë¬¸ì œ 4] CMD_HEAL_ALL í•´ê¸ˆ (PlayerB.c ì›ë³¸ ë¡œì§ - Skill 13: íšŒë³µ2)
+    // -----------------------------------------------------------------------------------------
+    void solve_problem_4_heal_all(int my_key) {
+        char final_key[100] = "";
+        
+        for (int i = 0; i < count; i++) {
+            if (strcmp(list[i].name, list[i].slot) >= 0) {
+                if (strcmp(list[i].KEY_FRAG, "NIL") != 0) {
+                    strcpy_s(final_key, sizeof(final_key), list[i].KEY_FRAG);
+                        break;
+                }
+            }
         }
-    }
-    if (last_curse_idx != -1) strcat_s(final_key_3, sizeof(final_key_3), list[last_curse_idx].KEY_FRAG);
 
-    // Á¶°Ç 4: ÀÌ¸§(NAME)ÀÌ 'I'·Î ½ÃÀÛÇÏ´Â ¾ÆÀÌÅÛ Áß Ã³À½ -> 'T'
-    for (int i = 0; i < count; i++) {
-        if (list[i].name[0] == 'I' && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
-            strcat_s(final_key_3, sizeof(final_key_3), list[i].KEY_FRAG);
-            break;
+        attempt_skill_unlock(my_key, CMD_HEAL_ALL, final_key);
+        if (is_skill_unlocked(my_key, CMD_HEAL_ALL))
+            printf("TEAM-1 (ë¬¸ì œ 4/Skill 13) : CMD_HEAL_ALL í•´ê¸ˆ ì„±ê³µ!\n");
+        else
+            printf("TEAM-1 (ë¬¸ì œ 4/Skill 13) : CMD_HEAL_ALL í•´ê¸ˆ ì‹¤íŒ¨ ã…œã…œ\n");
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // [ë¬¸ì œ 5] CMD_RANGE_ATTACK í•´ê¸ˆ (9999999.txt ë¡œì§ í†µí•© - Skill 14: ì›ê±°ë¦¬ê³µê²©)
+    // -----------------------------------------------------------------------------------------
+    void solve_problem_5_range(int my_key) {
+
+        char final_key[100] = "";
+        int N = 0;
+
+        for (int i = 0; i < count; i++) {
+            if (strstr(list[i].KEY_FRAG, "K") != NULL) {
+                N = list[i].HP;
+                    break;
+            }
         }
+
+        if (N > 0) {
+            FILE* fp = NULL;
+            // fopen_s ì‚¬ìš©
+            if (fopen_s(&fp, TARGET_CSV, "rb") == 0 && fp != NULL) {
+
+                // íŒŒì¼ì˜ ì‹œì‘(ì˜¤í”„ì…‹ 0)ì—ì„œ N ë°”ì´íŠ¸ ì•ìœ¼ë¡œ ì´ë™ (Në²ˆì§¸ ê¸€ìëŠ” ì¸ë±ìŠ¤ N-1)
+                if (fseek(fp, (long)(N - 1), SEEK_SET) == 0) {
+                    char t[6] = { 0 };
+                    size_t r = fread(t, 1, 5, fp);
+                    t[r] = '\0';
+                    sprintf_s(final_key, sizeof(final_key), "\"%s\"", t);
+                }
+                fclose(fp);
+            }
+        }
+
+        attempt_skill_unlock(my_key, CMD_RANGE_ATTACK, final_key);
+        if (is_skill_unlocked(my_key, CMD_RANGE_ATTACK))
+            printf("TEAM-1 (ë¬¸ì œ 5/Skill 14) : CMD_RANGE_ATTACK í•´ê¸ˆ ì„±ê³µ! ì •ë‹µ: [%s]\n", final_key);
+        else
+            printf("TEAM-1 (ë¬¸ì œ 5/Skill 14) : CMD_RANGE_ATTACK í•´ê¸ˆ ì‹¤íŒ¨... ì‹œë„í•œ í‚¤: [%s]\n", final_key);
     }
 
-    attempt_skill_unlock(my_secret_key, CMD_BLINK_UP, final_key_3);
-    if (is_skill_unlocked(my_secret_key, CMD_BLINK_UP))
-        printf("TEAM-1 : CMD_BLINK ÇØ±İ ¼º°ø!\n");
-    else
-        printf("TEAM-1 : CMD_BLINK ÇØ±İ ½ÇÆĞ ¤Ì¤Ì\n");
+    // -----------------------------------------------------------------------------------------
+    // [ë¬¸ì œ 6] CMD_SUICIDE í•´ê¸ˆ (9999999.txt ë¡œì§ í†µí•© - Skill 16: ìí­)
+    // -----------------------------------------------------------------------------------------
+    void solve_problem_6_suicide(int my_key) {
 
+        char final_key[100] = "";
+        char combined[2000] = { 0 };
 
-    // ******************************************************************
-    // 20251413.txt - 4¹ø ¹®Á¦: CMD_HEAL_ALL (È¸º¹2) ÇØ±İ (*H* ¸¸µé±â)
-    // ******************************************************************
-    char final_key_4[100] = "";
-    // Á¶°Ç: ÀÌ¸§(NAME)ÀÌ ½½·Ô(SLOT)º¸´Ù »çÀü¼øÀ¸·Î µÚ°Å³ª °°Àº(>=0) Ã¹ ¹øÂ° ¾ÆÀÌÅÛ -> 'H'
-    for (int i = 0; i < count; i++) {
-        if (strcmp(list[i].name, list[i].slot) >= 0) {
-            if (strcmp(list[i].KEY_FRAG, "NIL") != 0) {
-                strcpy_s(final_key_4, sizeof(final_key_4), list[i].KEY_FRAG);
+        
+        for (int i = 0; i < count; i++) {
+            if (strstr(list[i].name, "Sword") != NULL) {
+                // strcat_s ì‚¬ìš©
+                strcat_s(combined, sizeof(combined), list[i].KEY_FRAG);
+            }
+        }
+
+        char temp[2000];
+        strcpy_s(temp, sizeof(temp), combined);
+
+        char* next_token = NULL;
+        // strtok_s ì‚¬ìš©
+        char* tok = strtok_s(temp, "*", &next_token);
+        char* best = NULL;
+        int max_len = -1;
+
+        while (tok) {
+            int len = (int)strlen(tok);
+            if (len > max_len) {
+                max_len = len;
+                best = tok;
+            }
+            tok = strtok_s(NULL, "*", &next_token);
+        }
+
+        if (best) strcpy_s(final_key, sizeof(final_key), best);
+
+            // CMD_SUICIDE í•´ê¸ˆ ì‹œë„
+            attempt_skill_unlock(my_key, CMD_BLESS, final_key);
+            if (is_skill_unlocked(my_key, CMD_BLESS))
+                printf("TEAM-1 (ë¬¸ì œ 6/Skill 16) : CMD_SUICIDE í•´ê¸ˆ ì„±ê³µ! ì •ë‹µ: [%s]\n", final_key);
+            else
+                printf("TEAM-1 (ë¬¸ì œ 6/Skill 16) : CMD_SUICIDE í•´ê¸ˆ ì‹¤íŒ¨... ì‹œë„í•œ í‚¤: [%s]\n", final_key);
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // [ë¬¸ì œ 7] CMD_H_ATTACK / CMD_V_ATTACK í•´ê¸ˆ (20251209-161632.txt ë¡œì§ ì´ì‹ - Skill 17/18: ê°€ë¡œ/ì„¸ë¡œ ë§ˆë²•)
+    // -----------------------------------------------------------------------------------------
+    void solve_problem_7_hv(int my_key) {
+        // PlayerB.cì˜ Weapon êµ¬ì¡°ì²´ ì •ì˜ì— ë§ê²Œ ë²„í¼ í¬ê¸°ë¥¼ ì¡°ì • (50)
+        char final_key[16] = "";
+        char bestName[50] = "";
+        char bestCurse[50] = "";
+        int  maxNameLen = -1;
+        int  minCurseLen = 9999;
+
+        // ì „ì—­ list ì‚¬ìš©
+        for (int i = 0; i < count; i++) {
+            const char* name = list[i].name;
+            const char* curse = list[i].CURSE;
+
+            if (name[0] != '\0') {
+                int len = (int)strlen(name);
+                if (len > maxNameLen) {
+                    maxNameLen = len;
+                    strcpy_s(bestName, sizeof(bestName), name);
+                }
+            }
+
+            if (curse[0] != '\0') {
+                int len = (int)strlen(curse);
+                if (len < minCurseLen) {
+                    minCurseLen = len;
+                    strcpy_s(bestCurse, sizeof(bestCurse), curse);
+                }
+            }
+        }
+
+        if (bestName[0] == '\0' || bestCurse[0] == '\0') {
+            printf("TEAM-1 (ë¬¸ì œ 7/Skill 17/18) : ë°ì´í„° ë¶€ì¡±ìœ¼ë¡œ í•´ê¸ˆ ì‹¤íŒ¨.\n");
+            return;
+        }
+
+        char head[4] = { 0 };
+        strncpy_s(head, sizeof(head), bestName, 3);
+
+        char tail[4] = { 0 };
+        int clen = (int)strlen(bestCurse);
+        if (clen >= 3) {
+            char* start = (char*)bestCurse + (clen - 3); // const char*ë¥¼ char*ë¡œ í˜•ë³€í™˜ í•„ìš” (strncpy_s ì›í˜•ì— ë”°ë¼)
+            strncpy_s(tail, sizeof(tail), start, 3);
+        }
+        else {
+            // 3ê¸€ì ë¯¸ë§Œì´ë©´ ì „ì²´ ë³µì‚¬ 
+            strncpy_s(tail, sizeof(tail), bestCurse, sizeof(tail) - 1);
+        }
+
+        sprintf_s(final_key, sizeof(final_key), "%s%s", head, tail);
+        // ì •ë‹µ: GreILU
+
+        attempt_skill_unlock(my_key, CMD_H_ATTACK, final_key);
+        attempt_skill_unlock(my_key, CMD_V_ATTACK, final_key);
+
+        if (is_skill_unlocked(my_key, CMD_H_ATTACK))
+            printf("TEAM-1 (ë¬¸ì œ 7/Skill 17/18) : CMD_H_ATTACK/CMD_V_ATTACK í•´ê¸ˆ ì™„ë£Œ! ì •ë‹µ: [%s]\n", final_key);
+        else
+            printf("TEAM-1 (ë¬¸ì œ 7/Skill 17/18) : H/V ê³µê²© í•´ê¸ˆ ì‹¤íŒ¨ ã… ã…  ì‹œë„í•œ í‚¤: [%s]\n", final_key);
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // [ë¬¸ì œ 8] CMD_SECRETE í•´ê¸ˆ (20251209-161632.txt ë¡œì§ ì´ì‹ - Skill 19: ë¹„ë°€ ìŠ¤í‚¬)
+    // -----------------------------------------------------------------------------------------
+    void solve_problem_8_secret(int my_key) {
+        char final_key[32] = "";
+        char targetName[50] = ""; // PlayerB.c êµ¬ì¡°ì²´ NAME í¬ê¸° 50
+
+        for (int i = 0; i < count; i++) {
+            if (strstr(list[i].name, "Stone") != NULL) {
+                strcpy_s(targetName, sizeof(targetName), list[i].name);
                 break;
             }
         }
+
+        if (targetName[0] == '\0') {
+            printf("TEAM-1 (ë¬¸ì œ 8/Skill 19) : 'Stone' ì•„ì´í…œì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\n");
+            return;
+        }
+
+        char buf[50];
+        strcpy_s(buf, sizeof(buf), targetName);
+        const char* delims = "AEIOUaeiou";
+
+        char* context_vowels = NULL;
+        // strtok_s ì‚¬ìš©
+        char* tok = strtok_s(buf, delims, &context_vowels);
+
+        char   bestToken[50] = "";
+        size_t bestLen = 0;
+        while (tok != NULL) {
+            size_t len = strlen(tok);
+            // ë” ê¸¸ë©´ êµì²´ (ê°™ìœ¼ë©´ ê¸°ì¡´ ê²ƒ ìœ ì§€) [cite: 121]
+            if (len > bestLen) {
+                bestLen = len;
+                strcpy_s(bestToken, sizeof(bestToken), tok);
+            }
+            // strtok_s ë°˜ë³µ í˜¸ì¶œ
+            tok = strtok_s(NULL, delims, &context_vowels);
+        }
+
+        if (bestToken[0] == '\0') {
+            printf("TEAM-1 (ë¬¸ì œ 8/Skill 19) : ê°€ì¥ ê¸´ ììŒ í† í°ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.\n");
+            return;
+        }
+
+        strncpy_s(final_key, sizeof(final_key), bestToken, _TRUNCATE);
+
+            // CMD_SECRETE í•´ê¸ˆ ì‹œë„ [cite: 129]
+            attempt_skill_unlock(my_key, CMD_SECRETE, final_key);
+
+            if (is_skill_unlocked(my_key, CMD_SECRETE))
+                printf("TEAM-1 (ë¬¸ì œ 8/Skill 19) : CMD_SECRETE í•´ê¸ˆ ì™„ë£Œ! ì •ë‹µ: [%s]\n", final_key);
+            else
+                printf("TEAM-1 (ë¬¸ì œ 8/Skill 19) : CMD_SECRETE í•´ê¸ˆ ì‹¤íŒ¨ ã… ã…  ì‹œë„í•œ í‚¤: [%s]\n", final_key);
     }
 
-    attempt_skill_unlock(my_secret_key, CMD_HEAL_ALL, final_key_4);
-    if (is_skill_unlocked(my_secret_key, CMD_HEAL_ALL))
-        printf("TEAM-1 : CMD_HEAL_ALL ÇØ±İ ¼º°ø!\n");
-    else
-        printf("TEAM-1 : CMD_HEAL_ALL ÇØ±İ ½ÇÆĞ ¤Ì¤Ì\n");
 
-    // ------------------------------------------------------------------
+    // =================================================================================================
+    // [PART 3] AI ë¡œì§ êµ¬í˜„ë¶€ (ê¸°ì¡´ PlayerBì˜ ê°œì„ ëœ ë¡œì§ ìœ ì§€)
+    // =================================================================================================
 
-    printf("TEAM-1 : ÇÃ·¹ÀÌ¾î ÃÊ±âÈ­ ¿Ï·á. ¾Æ¹«Å°³ª ´©¸£½Ã¿À.\n");
-    // PlayerB.c¿Í µ¿ÀÏÇÏ°Ô getchar() È£Ãâ
-    getchar();
-}
+    // 9999999.txtì˜ AI ì „ëµ í•¨ìˆ˜ (PlayerBì˜ ë³€ìˆ˜ëª…ì— ë§ê²Œ í†µí•©)
+    int player_b_strategy(const Player* my_info, const Player* opponent_info) {
+
+        // PlayerB.c ì›ë³¸ì˜ calculate_distance ì‚¬ìš©
+        int dist = calculate_distance(my_info, opponent_info);
+        int mp = get_player_mp(my_info);
+        int hp = get_player_hp(my_info);
+        int my_x = get_player_x(my_info);
+        int opp_x = get_player_x(opponent_info);
+        int my_y = get_player_y(my_info);
+        int opp_y = get_player_y(opponent_info);
+        int my_key = my_secret_key;
+
+        // 1. ìœ„ê¸° ê´€ë¦¬ (HP 2 ì´í•˜ ì‹œ HEAL ë˜ëŠ” HEAL_ALL)
+        if (hp <= 2 && mp >= 1) {
+            if (mp >= 2 && is_skill_unlocked(my_key, CMD_HEAL_ALL)) return CMD_HEAL_ALL;
+            return CMD_HEAL;
+        }
+
+        // 2. ê·¼ì ‘ ì „íˆ¬ (ê±°ë¦¬ 1 ì´í•˜ ì‹œ STRIKE ë˜ëŠ” ATTACK)
+        if (dist <= 1) {
+            if (mp >= 2 && is_skill_unlocked(my_key, CMD_STRIKE)) return CMD_STRIKE;
+            return CMD_ATTACK;
+        }
+
+        // 3. ì›ê±°ë¦¬ ê²¬ì œ (ê±°ë¦¬ 2 ì‹œ RANGE_ATTACK)
+        if (dist == 2 && mp >= 1) {
+            if (is_skill_unlocked(my_key, CMD_RANGE_ATTACK)) return CMD_RANGE_ATTACK;
+        }
+
+        // 4. ê°€ë¡œ/ì„¸ë¡œ ê³µê²© (ì¶”ê°€ í•´ê¸ˆ ìŠ¤í‚¬ í™œìš©)
+        // ë¬¸ì œ 7(CMD_H_ATTACK/CMD_V_ATTACK)ì´ í•´ê¸ˆë˜ì—ˆì„ ë•Œ ì‚¬ìš©
+        if (my_x == opp_x && mp >= 3 && is_skill_unlocked(my_key, CMD_V_ATTACK)) return CMD_V_ATTACK;
+        if (my_y == opp_y && mp >= 3 && is_skill_unlocked(my_key, CMD_H_ATTACK)) return CMD_H_ATTACK;
+
+        // 5. ì¶”ê²©
+        if (my_x < opp_x) return CMD_RIGHT;
+        if (my_x > opp_x) return CMD_LEFT;
+        if (my_y < opp_y) return CMD_DOWN;
+        if (my_y > opp_y) return CMD_UP;
+
+        return CMD_REST;
+    }
+
+
+    // =================================================================================================
+    // [PART 4] ì‹œìŠ¤í…œ ì§„ì…ì  (PlayerB.c ì›ë³¸ ë¡œì§ + 5~8ë²ˆ ì¶”ê°€)
+    // =================================================================================================
+
+    void student2_ai_entry() {
+
+        // 1. AI ë“±ë¡ (ê¸°ì¡´ PlayerB.cëŠ” simple_killer_ai2ì˜€ìœ¼ë‚˜, ê°œì„ ëœ player_b_strategyë¡œ êµì²´)
+        my_secret_key = register_player_ai("TEAM-1", player_b_strategy); // TEAM-1 ìœ ì§€
+
+        // 2. CSV íŒŒì¼ ì½ê¸° (ì „ì—­ ë³€ìˆ˜ list, countì— ì €ì¥)
+        ReadFile();
+
+        printf("\n>>> TEAM-1 ìŠ¤í‚¬ í•´ê¸ˆ ì‹œë„ ì¤‘ (ë¬¸ì œ 1~8) <<<\n");
+
+        // ------------------------------------------------------------------
+        // ë¬¸ì œ 1~4 (PlayerB.c ì›ë³¸ ë¡œì§)
+        // ------------------------------------------------------------------
+        solve_problem_1_poison(my_secret_key);
+        solve_problem_2_strike(my_secret_key);
+        solve_problem_3_blink(my_secret_key);
+        solve_problem_4_heal_all(my_secret_key);
+
+        // ------------------------------------------------------------------
+        // ë¬¸ì œ 5, 6 (9999999.txt ë¡œì§ í†µí•©)
+        // ------------------------------------------------------------------
+        solve_problem_5_range(my_secret_key);
+        solve_problem_6_suicide(my_secret_key); // DOCXì˜ ë¬¸ì œ ë²ˆí˜¸ 16(ìí­)ì— í•´ë‹¹
+
+        // ------------------------------------------------------------------
+        // ë¬¸ì œ 7, 8 (20251209-161632.txt ë¡œì§ í†µí•©)
+        // ------------------------------------------------------------------
+        solve_problem_7_hv(my_secret_key); // Skill 17/18: ê°€ë¡œ/ì„¸ë¡œ ë§ˆë²•
+        solve_problem_8_secret(my_secret_key); // Skill 19: ë¹„ë°€ ìŠ¤í‚¬
+
+        printf("\nTEAM-1 : í”Œë ˆì´ì–´ ì´ˆê¸°í™” ì™„ë£Œ. ì•„ë¬´í‚¤ë‚˜ ëˆ„ë¥´ì‹œì˜¤.\n");
+        getchar();
+    }
