@@ -3,20 +3,20 @@
   kimyoumin_20251402.c
   kimyumi_20251389.c
   Leejongseok_20251413.c
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\action.c(9,13): warning C4013: 'rand'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\hongjua_20251398.c(12,10): warning C4013: 'rand'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\hongjua_20251398.c(24,4): warning C4013: 'printf'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\hongjua_20251398.c(25,11): warning C4013: 'Heal'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\hongjua_20251398.c(30,11): warning C4013: 'Wait'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyoumin_20251402.c(8,10): warning C4013: 'rand'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyoumin_20251402.c(11,10): warning C4013: 'Wait'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyoumin_20251402.c(24,11): warning C4013: 'Heal'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyumi_20251389.c(5,9): warning C4013: 'printf'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyumi_20251389.c(6,16): warning C4013: 'Heal'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyumi_20251389.c(12,16): warning C4013: 'Wait'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\Leejongseok_20251413.c(4,10): warning C4013: 'Heal'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\Leejongseok_20251413.c(7,11): warning C4013: 'rand'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\Project1\Leejongseok_20251413.c(9,11): warning C4013: 'Wait'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
   main.c
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\action.c(9,13): warning C4013: 'rand'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\hongjua_20251398.c(12,10): warning C4013: 'rand'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\hongjua_20251398.c(24,4): warning C4013: 'printf'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\hongjua_20251398.c(25,11): warning C4013: 'Heal'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\hongjua_20251398.c(30,11): warning C4013: 'Wait'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyoumin_20251402.c(8,10): warning C4013: 'rand'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyoumin_20251402.c(11,10): warning C4013: 'Wait'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyoumin_20251402.c(24,11): warning C4013: 'Heal'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyumi_20251389.c(5,9): warning C4013: 'printf'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyumi_20251389.c(6,16): warning C4013: 'Heal'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\kimyumi_20251389.c(12,16): warning C4013: 'Wait'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\Leejongseok_20251413.c(4,10): warning C4013: 'Heal'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\Leejongseok_20251413.c(7,11): warning C4013: 'rand'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
+C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\Project1\Leejongseok_20251413.c(9,11): warning C4013: 'Wait'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
   코드를 생성하고 있습니다...
-  Project1.vcxproj -> D:\20251402김유민\Multi2_Team1_2025\MP2_Team1\Project1\x64\Debug\Lecture11-Action.exe
+  Project1.vcxproj -> C:\Users\kimmi\Desktop\GitHub\Multi2_Team1_2025\MP2_Team1\Project1\x64\Debug\Lecture11-Action.exe
