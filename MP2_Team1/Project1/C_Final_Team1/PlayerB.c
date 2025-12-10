@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stddef.h> // size_t 정의 포함
-#include <ctype.h>  // isvowel을 대체하기 위해 strcspn 사용 (문제 7/8 로직에 필요할 수 있음)
 
 #define MAX_Weapon 100 // PlayerB.c 원본
 
@@ -120,7 +118,7 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
     // =================================================================================================
 
     // -----------------------------------------------------------------------------------------
-    // [문제 1] CMD_POISON 해금 (PlayerB.c 원본 로직 - Skill 6: 독해금)
+    // [문제 1] CMD_POISON 해금 (20251402 김유민)
     // -----------------------------------------------------------------------------------------
     void solve_problem_1_poison(int my_key) {
         int filtered_indices[MAX_Weapon];
@@ -144,13 +142,13 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
 
         attempt_skill_unlock(my_key, CMD_POISON, result);
         if (is_skill_unlocked(my_key, CMD_POISON))
-            printf("TEAM-1 (문제 1/Skill 6) : CMD_POISON 해금 완료\n");
+            printf("TEAM-1 : CMD_POISON 해금 완료\n");
         else
-            printf("TEAM-1 (문제 1/Skill 6) : CMD_POISON 해금 실패 ㅜㅜ\n");
+            printf("TEAM-1 : CMD_POISON 해금 실패 ㅜㅜ\n");
     }
 
     // -----------------------------------------------------------------------------------------
-    // [문제 2] CMD_STRIKE 해금 (PlayerB.c 원본 로직 - Skill 7: 강타)
+    // [문제 2] CMD_STRIKE 해금 (20251402 김유민)
     // -----------------------------------------------------------------------------------------
     void solve_problem_2_strike(int my_key) {
         int total_index = 0;
@@ -172,13 +170,13 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
 
         attempt_skill_unlock(my_key, CMD_STRIKE, result);
         if (is_skill_unlocked(my_key, CMD_STRIKE))
-            printf("TEAM-1 (문제 2/Skill 7) : CMD_STRIKE 해금 완료\n");
+            printf("TEAM-1 : CMD_STRIKE 해금 완료\n");
         else
-            printf("TEAM-1 (문제 2/Skill 7) : CMD_STRIKE 해금 실패 ㅜㅜ\n");
+            printf("TEAM-1 : CMD_STRIKE 해금 실패 ㅜㅜ\n");
     }
 
     // -----------------------------------------------------------------------------------------
-    // [문제 3] CMD_BLINK_UP 해금 (PlayerB.c 원본 로직 - Skill 8~11: 점멸)
+    // [문제 3] CMD_BLINK_UP 해금 (20251413 이종석)
     // -----------------------------------------------------------------------------------------
     void solve_problem_3_blink(int my_key) {
         char final_key[100] = "";
@@ -223,13 +221,13 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
 
                     attempt_skill_unlock(my_key, CMD_BLINK_UP, final_key);
                     if (is_skill_unlocked(my_key, CMD_BLINK_UP))
-                        printf("TEAM-1 (문제 3/Skill 8) : CMD_BLINK 해금 성공!\n");
+                        printf("TEAM-1 : CMD_BLINK 해금 완료\n");
                     else
-                        printf("TEAM-1 (문제 3/Skill 8) : CMD_BLINK 해금 실패 ㅜㅜ\n");
+                        printf("TEAM-1 : CMD_BLINK 해금 실패 ㅜㅜ\n");
     }
 
     // -----------------------------------------------------------------------------------------
-    // [문제 4] CMD_HEAL_ALL 해금 (PlayerB.c 원본 로직 - Skill 13: 회복2)
+    // [문제 4] CMD_HEAL_ALL 해금 (20251413 이종석)
     // -----------------------------------------------------------------------------------------
     void solve_problem_4_heal_all(int my_key) {
         char final_key[100] = "";
@@ -245,13 +243,13 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
 
         attempt_skill_unlock(my_key, CMD_HEAL_ALL, final_key);
         if (is_skill_unlocked(my_key, CMD_HEAL_ALL))
-            printf("TEAM-1 (문제 4/Skill 13) : CMD_HEAL_ALL 해금 성공!\n");
+            printf("TEAM-1 : CMD_HEAL_ALL 해금 완료\n");
         else
-            printf("TEAM-1 (문제 4/Skill 13) : CMD_HEAL_ALL 해금 실패 ㅜㅜ\n");
+            printf("TEAM-1 : CMD_HEAL_ALL 해금 실패 ㅜㅜ\n");
     }
 
     // -----------------------------------------------------------------------------------------
-    // [문제 5] CMD_RANGE_ATTACK 해금 (9999999.txt 로직 통합 - Skill 14: 원거리공격)
+    // [문제 5] CMD_RANGE_ATTACK 해금 (20251398 홍주아)
     // -----------------------------------------------------------------------------------------
     void solve_problem_5_range(int my_key) {
 
@@ -283,13 +281,13 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
 
         attempt_skill_unlock(my_key, CMD_RANGE_ATTACK, final_key);
         if (is_skill_unlocked(my_key, CMD_RANGE_ATTACK))
-            printf("TEAM-1 (문제 5/Skill 14) : CMD_RANGE_ATTACK 해금 성공! 정답: [%s]\n", final_key);
+            printf("TEAM-1 : CMD_RANGE_ATTACK 해금 완료\n");
         else
-            printf("TEAM-1 (문제 5/Skill 14) : CMD_RANGE_ATTACK 해금 실패... 시도한 키: [%s]\n", final_key);
+            printf("TEAM-1 : CMD_RANGE_ATTACK 해금 실패 ㅜㅜ\n");
     }
 
     // -----------------------------------------------------------------------------------------
-    // [문제 6] CMD_SUICIDE 해금 (9999999.txt 로직 통합 - Skill 16: 자폭)
+    // [문제 6] CMD_SUICIDE 해금 (20251398 홍주아)
     // -----------------------------------------------------------------------------------------
     void solve_problem_6_suicide(int my_key) {
 
@@ -327,13 +325,13 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
             // CMD_SUICIDE 해금 시도
             attempt_skill_unlock(my_key, CMD_BLESS, final_key);
             if (is_skill_unlocked(my_key, CMD_BLESS))
-                printf("TEAM-1 (문제 6/Skill 16) : CMD_SUICIDE 해금 성공! 정답: [%s]\n", final_key);
+                printf("TEAM-1 : CMD_SUICIDE 해금 완료\n");
             else
-                printf("TEAM-1 (문제 6/Skill 16) : CMD_SUICIDE 해금 실패... 시도한 키: [%s]\n", final_key);
+                printf("TEAM-1 : CMD_SUICIDE 해금 실패 ㅜㅜ\n");
     }
 
     // -----------------------------------------------------------------------------------------
-    // [문제 7] CMD_H_ATTACK / CMD_V_ATTACK 해금 (20251209-161632.txt 로직 이식 - Skill 17/18: 가로/세로 마법)
+    // [문제 7] CMD_H_ATTACK / CMD_V_ATTACK 해금 (20251389 김유미)
     // -----------------------------------------------------------------------------------------
     void solve_problem_7_hv(int my_key) {
         // PlayerB.c의 Weapon 구조체 정의에 맞게 버퍼 크기를 조정 (50)
@@ -391,13 +389,13 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
         attempt_skill_unlock(my_key, CMD_V_ATTACK, final_key);
 
         if (is_skill_unlocked(my_key, CMD_H_ATTACK))
-            printf("TEAM-1 (문제 7/Skill 17/18) : CMD_H_ATTACK/CMD_V_ATTACK 해금 완료! 정답: [%s]\n", final_key);
+            printf("TEAM-1 : CMD_H_ATTACK/CMD_V_ATTACK 해금 완료\n");
         else
-            printf("TEAM-1 (문제 7/Skill 17/18) : H/V 공격 해금 실패 ㅠㅠ 시도한 키: [%s]\n", final_key);
+            printf("TEAM-1 : H/V 공격 해금 실패 ㅜㅜ\n");
     }
 
     // -----------------------------------------------------------------------------------------
-    // [문제 8] CMD_SECRETE 해금 (20251209-161632.txt 로직 이식 - Skill 19: 비밀 스킬)
+    // [문제 8] CMD_SECRETE 해금 (20251389 김유미)
     // -----------------------------------------------------------------------------------------
     void solve_problem_8_secret(int my_key) {
         char final_key[32] = "";
@@ -447,9 +445,9 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
             attempt_skill_unlock(my_key, CMD_SECRETE, final_key);
 
             if (is_skill_unlocked(my_key, CMD_SECRETE))
-                printf("TEAM-1 (문제 8/Skill 19) : CMD_SECRETE 해금 완료! 정답: [%s]\n", final_key);
+                printf("TEAM-1 : CMD_SECRETE 해금 완료\n");
             else
-                printf("TEAM-1 (문제 8/Skill 19) : CMD_SECRETE 해금 실패 ㅠㅠ 시도한 키: [%s]\n", final_key);
+                printf("TEAM-1 : CMD_SECRETE 해금 실패 ㅜㅜ\n");
     }
 
 
