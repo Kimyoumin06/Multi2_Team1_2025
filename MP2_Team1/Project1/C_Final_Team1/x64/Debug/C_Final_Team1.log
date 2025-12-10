@@ -1,3 +1,2 @@
 ﻿  PlayerB.c
-D:\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\PlayerB.c(382,9): warning C4013: 'set_custom_secrete_message'이(가) 정의되지 않았습니다. extern은 int형을 반환하는 것으로 간주합니다.
-  C_Final_Team1.vcxproj -> D:\Multi2_Team1_2025\MP2_Team1\Project1\x64\Debug\C_Final_Team1.exe
+D:\Multi2_Team1_2025\MP2_Team1\Project1\C_Final_Team1\PlayerB.c(323,9): error C2065: '최고': 선언되지 않은 식별자입니다.
