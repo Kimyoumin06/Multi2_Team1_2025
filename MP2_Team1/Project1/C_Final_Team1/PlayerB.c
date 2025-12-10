@@ -1,12 +1,12 @@
 ﻿/**
  * =================================================================================================
- * [베테랑 C 개발자의 고급 전투 AI - 예측 및 카운터 시스템]
+ * [토너먼트용 강화 전략 AI - PlayerB]
  * =================================================================================================
  * 핵심 설계 철학:
- * 1. 위협도 평가 시스템 (Threat Assessment)
- * 2. 예측 알고리즘 (Prediction Engine)
- * 3. 동적 전략 전환 (Adaptive Strategy)
- * 4. 최적 행동 선택 (Decision Tree with Scoring)
+ * 1. MP 효율 관리 (Resource Management)
+ * 2. 위기 상황 대응 (Crisis Management)
+ * 3. 거리별 최적 공격 (Distance-based Attack)
+ * 4. 점멸 기동 (Blink Mobility)
  * =================================================================================================
  */
 
@@ -16,7 +16,6 @@
 #include <string.h>
 
 #define MAX_Weapon 100
-#define MAX_HISTORY 10  // 상대 행동 히스토리 추적
 
  // 아이템 정보 구조체
 typedef struct {
@@ -30,23 +29,10 @@ typedef struct {
     char KEY_FRAG[50];
 } Weapon;
 
-// 전투 상태 추적 구조체
-typedef struct {
-    int last_opponent_x;
-    int last_opponent_y;
-    int opponent_move_count;
-    int my_last_hp;
-    int opponent_last_hp;
-    int turns_survived;
-    int aggressive_moves;  // 상대의 공격적 행동 횟수
-    int defensive_moves;   // 상대의 방어적 행동 횟수
-} CombatState;
-
 // 전역 변수
 Weapon list[MAX_Weapon];
 int count = 0;
 int my_secret_key;
-CombatState combat_state = { -1, -1, 0, 10, 10, 0, 0, 0 };
 
 static const char* TARGET_CSV = "game_puzzle_en.csv";
 
@@ -130,7 +116,7 @@ void ReadFile(void) {
 }
 
 // =================================================================================================
-// [스킬 해금 함수들 - 기존과 동일]
+// [스킬 해금 함수들]
 // =================================================================================================
 
 void solve_problem_1_poison(int my_key) {
@@ -370,349 +356,141 @@ void solve_problem_8_secret(int my_key) {
 }
 
 // =================================================================================================
-// [베테랑 개발자의 고급 AI 시스템]
+// [토너먼트용 강화 AI 로직]
 // =================================================================================================
 
-/**
- * 위협도 평가 함수
- * 현재 상황의 위험도를 0~100 점수로 평가
- * 높을수록 위험한 상황
- */
-int evaluate_threat_level(const Player* my_info, const Player* opponent_info, int dist) {
-    int threat = 0;
-    int my_hp = get_player_hp(my_info);
-    int my_mp = get_player_mp(my_info);
-    int opp_hp = get_player_hp(opponent_info);
-
-    // HP 기반 위협도
-    if (my_hp <= 1) threat += 50;        // 매우 위험
-    else if (my_hp <= 2) threat += 35;   // 위험
-    else if (my_hp <= 3) threat += 20;   // 주의
-    else if (my_hp <= 5) threat += 10;   // 경계
-
-    // 거리 기반 위협도
-    if (dist <= 1) threat += 25;         // 근접전
-    else if (dist == 2) threat += 10;    // 중거리
-
-    // HP 차이 기반 위협도
-    int hp_diff = my_hp - opp_hp;
-    if (hp_diff <= -3) threat += 20;     // 큰 열세
-    else if (hp_diff <= -1) threat += 10; // 약간 열세
-    else if (hp_diff >= 3) threat -= 15;  // 큰 우위
-
-    // MP 부족 상황
-    if (my_mp <= 1 && dist <= 2) threat += 15;
-
-    return (threat < 0) ? 0 : ((threat > 100) ? 100 : threat);
-}
-
-/**
- * 행동 점수 평가 함수
- * 각 행동의 효용성을 점수로 평가
- */
-typedef struct {
-    int cmd;
-    int score;
-    const char* reason;
-} ActionScore;
-
-void score_actions(ActionScore* actions, int* action_count,
-    const Player* my_info, const Player* opponent_info,
-    int dist, int threat, int my_key) {
-
-    int my_hp = get_player_hp(my_info);
-    int my_mp = get_player_mp(my_info);
+int player_b_strategy(const Player* my_info, const Player* opponent_info)
+{
+    int dist = calculate_distance(my_info, opponent_info);
+    int mp = get_player_mp(my_info);
+    int hp = get_player_hp(my_info);
     int opp_hp = get_player_hp(opponent_info);
     int my_x = get_player_x(my_info);
-    int opp_x = get_player_x(opponent_info);
     int my_y = get_player_y(my_info);
-    int opp_y = get_player_y(opponent_info);
-
-    *action_count = 0;
-
-    // =========================================================================
-    // [회복 행동 평가]
-    // =========================================================================
-    if (my_mp >= 2 && is_skill_unlocked(my_key, CMD_HEAL_ALL)) {
-        int heal_score = 0;
-        if (my_hp <= 1) heal_score = 100;      // 최우선
-        else if (my_hp <= 2) heal_score = 85;
-        else if (my_hp <= 3) heal_score = 60;
-        else if (my_hp <= 5) heal_score = 30;
-
-        // 안전 거리면 점수 증가
-        if (dist >= 3) heal_score += 10;
-
-        actions[*action_count].cmd = CMD_HEAL_ALL;
-        actions[*action_count].score = heal_score;
-        actions[*action_count].reason = "전체 회복";
-        (*action_count)++;
-    }
-
-    if (my_mp >= 1) {
-        int heal_score = 0;
-        if (my_hp <= 1) heal_score = 95;
-        else if (my_hp <= 2) heal_score = 75;
-        else if (my_hp <= 3) heal_score = 50;
-        else if (my_hp <= 5) heal_score = 25;
-
-        if (dist >= 3) heal_score += 10;
-
-        actions[*action_count].cmd = CMD_HEAL;
-        actions[*action_count].score = heal_score;
-        actions[*action_count].reason = "단일 회복";
-        (*action_count)++;
-    }
-
-    // =========================================================================
-    // [공격 행동 평가]
-    // =========================================================================
-
-    // POISON: 장기전 유리
-    if (dist == 1 && my_mp >= 2 && is_skill_unlocked(my_key, CMD_POISON)) {
-        int poison_score = 40;
-        if (opp_hp >= 6) poison_score += 20;  // 적 HP 높으면 유리
-        if (my_hp >= 5) poison_score += 10;   // 내 HP 안전하면 장기전 가능
-
-        actions[*action_count].cmd = CMD_POISON;
-        actions[*action_count].score = poison_score;
-        actions[*action_count].reason = "독 공격";
-        (*action_count)++;
-    }
-
-    // STRIKE: 고효율 공격
-    if (dist == 1 && my_mp >= 2 && is_skill_unlocked(my_key, CMD_STRIKE)) {
-        int strike_score = 50;
-        if (opp_hp <= 2) strike_score += 30;  // 킬 찬스
-        if (my_hp >= 4) strike_score += 10;   // 안전하면 적극 공격
-
-        actions[*action_count].cmd = CMD_STRIKE;
-        actions[*action_count].score = strike_score;
-        actions[*action_count].reason = "강타";
-        (*action_count)++;
-    }
-
-    // ATTACK: 기본 공격
-    if (dist == 1) {
-        int attack_score = 35;
-        if (opp_hp <= 1) attack_score += 40;  // 마무리
-        if (my_mp <= 2) attack_score += 15;   // MP 절약
-
-        actions[*action_count].cmd = CMD_ATTACK;
-        actions[*action_count].score = attack_score;
-        actions[*action_count].reason = "일반 공격";
-        (*action_count)++;
-    }
-
-    // RANGE_ATTACK: 원거리 견제
-    if (dist == 2 && my_mp >= 1 && is_skill_unlocked(my_key, CMD_RANGE_ATTACK)) {
-        int range_score = 40;
-        if (my_hp <= 4) range_score += 20;    // 약하면 안전 거리 유지
-        if (opp_hp <= 3) range_score += 15;   // 적도 약하면 견제
-
-        actions[*action_count].cmd = CMD_RANGE_ATTACK;
-        actions[*action_count].score = range_score;
-        actions[*action_count].reason = "원거리 공격";
-        (*action_count)++;
-    }
-
-    // H/V_ATTACK: 직선 마법 공격
-    if (my_mp >= 3) {
-        if (my_y == opp_y && is_skill_unlocked(my_key, CMD_H_ATTACK)) {
-            int h_score = 45;
-            if (dist >= 3) h_score += 10;     // 원거리에서 유용
-            if (opp_hp <= 2) h_score += 20;   // 마무리 가능
-
-            actions[*action_count].cmd = CMD_H_ATTACK;
-            actions[*action_count].score = h_score;
-            actions[*action_count].reason = "가로 마법";
-            (*action_count)++;
-        }
-
-        if (my_x == opp_x && is_skill_unlocked(my_key, CMD_V_ATTACK)) {
-            int v_score = 45;
-            if (dist >= 3) v_score += 10;
-            if (opp_hp <= 2) v_score += 20;
-
-            actions[*action_count].cmd = CMD_V_ATTACK;
-            actions[*action_count].score = v_score;
-            actions[*action_count].reason = "세로 마법";
-            (*action_count)++;
-        }
-    }
-
-    // =========================================================================
-    // [이동 행동 평가]
-    // =========================================================================
-
-    // BLINK: 긴급 기동
-    if (my_mp >= 2 && dist >= 3) {
-        // 우위일 때 빠른 접근
-        if (my_hp > opp_hp + 2 && is_skill_unlocked(my_key, CMD_BLINK_UP)) {
-            int blink_score = 40;
-
-            if (my_y > opp_y && is_skill_unlocked(my_key, CMD_BLINK_UP)) {
-                actions[*action_count].cmd = CMD_BLINK_UP;
-                actions[*action_count].score = blink_score;
-                actions[*action_count].reason = "점멸 위";
-                (*action_count)++;
-            }
-            if (my_y < opp_y && is_skill_unlocked(my_key, CMD_BLINK_DOWN)) {
-                actions[*action_count].cmd = CMD_BLINK_DOWN;
-                actions[*action_count].score = blink_score;
-                actions[*action_count].reason = "점멸 아래";
-                (*action_count)++;
-            }
-            if (my_x < opp_x && is_skill_unlocked(my_key, CMD_BLINK_RIGHT)) {
-                actions[*action_count].cmd = CMD_BLINK_RIGHT;
-                actions[*action_count].score = blink_score;
-                actions[*action_count].reason = "점멸 오른쪽";
-                (*action_count)++;
-            }
-            if (my_x > opp_x && is_skill_unlocked(my_key, CMD_BLINK_LEFT)) {
-                actions[*action_count].cmd = CMD_BLINK_LEFT;
-                actions[*action_count].score = blink_score;
-                actions[*action_count].reason = "점멸 왼쪽";
-                (*action_count)++;
-            }
-        }
-    }
-
-    // 일반 이동: Kiting 전략 (치고 빠지기)
-    if (threat >= 50) {
-        // 후퇴
-        int retreat_score = 55;
-        if (my_x < opp_x) {
-            actions[*action_count].cmd = CMD_LEFT;
-            actions[*action_count].score = retreat_score;
-            actions[*action_count].reason = "전략적 후퇴 (왼쪽)";
-            (*action_count)++;
-        }
-        if (my_x > opp_x) {
-            actions[*action_count].cmd = CMD_RIGHT;
-            actions[*action_count].score = retreat_score;
-            actions[*action_count].reason = "전략적 후퇴 (오른쪽)";
-            (*action_count)++;
-        }
-        if (my_y < opp_y) {
-            actions[*action_count].cmd = CMD_UP;
-            actions[*action_count].score = retreat_score;
-            actions[*action_count].reason = "전략적 후퇴 (위)";
-            (*action_count)++;
-        }
-        if (my_y > opp_y) {
-            actions[*action_count].cmd = CMD_DOWN;
-            actions[*action_count].score = retreat_score;
-            actions[*action_count].reason = "전략적 후퇴 (아래)";
-            (*action_count)++;
-        }
-    }
-    else {
-        // 추격
-        int chase_score = 30;
-        if (my_hp > opp_hp) chase_score += 15;
-
-        if (my_x < opp_x) {
-            actions[*action_count].cmd = CMD_RIGHT;
-            actions[*action_count].score = chase_score;
-            actions[*action_count].reason = "추격 (오른쪽)";
-            (*action_count)++;
-        }
-        if (my_x > opp_x) {
-            actions[*action_count].cmd = CMD_LEFT;
-            actions[*action_count].score = chase_score;
-            actions[*action_count].reason = "추격 (왼쪽)";
-            (*action_count)++;
-        }
-        if (my_y < opp_y) {
-            actions[*action_count].cmd = CMD_DOWN;
-            actions[*action_count].score = chase_score;
-            actions[*action_count].reason = "추격 (아래)";
-            (*action_count)++;
-        }
-        if (my_y > opp_y) {
-            actions[*action_count].cmd = CMD_UP;
-            actions[*action_count].score = chase_score;
-            actions[*action_count].reason = "추격 (위)";
-            (*action_count)++;
-        }
-    }
-
-    // =========================================================================
-    // [버프 및 기타]
-    // =========================================================================
-
-    // BLESS: 버프
-    if (my_mp >= 3 && is_skill_unlocked(my_key, CMD_BLESS)) {
-        int bless_score = 0;
-        if (my_mp >= 7 && dist >= 3) bless_score = 35;  // MP 충분하고 안전할 때
-
-        actions[*action_count].cmd = CMD_BLESS;
-        actions[*action_count].score = bless_score;
-        actions[*action_count].reason = "축복";
-        (*action_count)++;
-    }
-
-    // REST: MP 회복
-    if (my_mp <= 2 && dist >= 3) {
-        int rest_score = 40;
-        if (my_mp == 0) rest_score += 20;
-
-        actions[*action_count].cmd = CMD_REST;
-        actions[*action_count].score = rest_score;
-        actions[*action_count].reason = "휴식 (MP 회복)";
-        (*action_count)++;
-    }
-}
-
-/**
- * 최종 AI 함수: 점수 기반 의사결정
- */
-int veteran_ai(const Player* my_info, const Player* opponent_info) {
-
-    // 상태 추적 업데이트
-    combat_state.turns_survived++;
-
-    // 현재 상태 분석
-    int dist = calculate_distance(my_info, opponent_info);
-    int threat = evaluate_threat_level(my_info, opponent_info, dist);
-
-    // 상대 행동 분석 (향후 예측 시스템 확장 가능)
     int opp_x = get_player_x(opponent_info);
     int opp_y = get_player_y(opponent_info);
-    if (combat_state.last_opponent_x != -1) {
-        int moved = (combat_state.last_opponent_x != opp_x ||
-            combat_state.last_opponent_y != opp_y);
-        if (moved) combat_state.opponent_move_count++;
+    int my_key = my_secret_key;
+
+    int dx = opp_x - my_x;
+    int dy = opp_y - my_y;
+
+    // =========================
+    // 0. MP 없고 멀리 있으면 휴식으로 MP 땡기기
+    // =========================
+    if (mp <= 1 && dist > 1) {
+        // 휴식: MP 2 회복 (패치된 룰 기준 이득 큼)
+        set_custom_secrete_message(my_key, "MP 충전");
+        return CMD_REST;
     }
-    combat_state.last_opponent_x = opp_x;
-    combat_state.last_opponent_y = opp_y;
 
-    // 행동 점수 평가
-    ActionScore actions[50];
-    int action_count = 0;
-    score_actions(actions, &action_count, my_info, opponent_info,
-        dist, threat, my_secret_key);
+    // =========================
+    // 1. 위기 관리 (체력 관리)
+    // =========================
 
-    // 최고 점수 행동 선택
-    int best_cmd = CMD_REST;
-    int best_score = -1;
-    const char* best_reason = "기본 행동";
+    // 완전 위험: HP 1 이하 → 무조건 회복
+    if (hp <= 1 && mp >= 1) {
+        // MP 충분하면 HEAL_ALL로 크게 회복
+        if (mp >= 3 && is_skill_unlocked(my_key, CMD_HEAL_ALL)) {
+            set_custom_secrete_message(my_key, "긴급 전체회복!");
+            return CMD_HEAL_ALL;
+        }
+        // 아니면 그냥 기본 회복
+        set_custom_secrete_message(my_key, "긴급 회복!");
+        return CMD_HEAL;
+    }
 
-    for (int i = 0; i < action_count; i++) {
-        if (actions[i].score > best_score) {
-            best_score = actions[i].score;
-            best_cmd = actions[i].cmd;
-            best_reason = actions[i].reason;
+    // 중위험: HP 2~3인데 상대 체력이 더 높고, MP 여유 많으면 선제 HEAL_ALL
+    if (hp <= 3 && hp < opp_hp && mp >= 4 && is_skill_unlocked(my_key, CMD_HEAL_ALL)) {
+        set_custom_secrete_message(my_key, "전략적 회복");
+        return CMD_HEAL_ALL;
+    }
+
+    // =========================
+    // 2. 근접 전투 (거리 1 이하)
+    // =========================
+    if (dist <= 1) {
+        // (1) 강타: 2 데미지, 효율 좋음 → 최우선
+        if (mp >= 2 && is_skill_unlocked(my_key, CMD_STRIKE)) {
+            set_custom_secrete_message(my_key, "강타!");
+            return CMD_STRIKE;
+        }
+
+        // (2) 독: 효율은 좀 안 좋지만, 내가 피/MP 여유 있고 상대 HP가 높을 때 한 번 써볼만
+        if (mp >= 5 && is_skill_unlocked(my_key, CMD_POISON) && hp > 3 && opp_hp >= 4) {
+            set_custom_secrete_message(my_key, "독 공격");
+            return CMD_POISON;
+        }
+
+        // (3) 그냥 기본 공격
+        set_custom_secrete_message(my_key, "일반 공격");
+        return CMD_ATTACK;
+    }
+
+    // =========================
+    // 3. 거리 2 → 원거리 공격
+    // =========================
+    if (dist == 2 && mp >= 1 && is_skill_unlocked(my_key, CMD_RANGE_ATTACK)) {
+        set_custom_secrete_message(my_key, "원거리 공격");
+        return CMD_RANGE_ATTACK;
+    }
+
+    // =========================
+    // 4. 가로/세로 광역 공격 (라인 맞으면 박기)
+    // =========================
+    if (mp >= 3 && is_skill_unlocked(my_key, CMD_H_ATTACK)) {
+        // 너무 가까울 때는 STRIKE가 더 좋은데,
+        // 여기까지 왔다는 건 dist > 1이라 STRIKE 사정거리가 아님
+        if (my_y == opp_y) {
+            // 같은 줄이면 가로 공격
+            set_custom_secrete_message(my_key, "가로 마법!");
+            return CMD_H_ATTACK;
+        }
+        if (my_x == opp_x && is_skill_unlocked(my_key, CMD_V_ATTACK)) {
+            // 같은 열이면 세로 공격 (열려있을 때만)
+            set_custom_secrete_message(my_key, "세로 마법!");
+            return CMD_V_ATTACK;
         }
     }
 
-    // 디버그 메시지 (전략 표시)
-    char msg[100];
-    sprintf_s(msg, sizeof(msg), "[%d점] %s", best_score, best_reason);
-    set_custom_secrete_message(my_secret_key, msg);
+    // =========================
+    // 5. 멀리서 점멸(BLINK)로 접근
+    // =========================
+    if (dist >= 3 && mp >= 1 && is_skill_unlocked(my_key, CMD_BLINK_UP)) {
+        // x, y 중 차이가 더 큰 방향으로 점멸
+        if (abs(dx) >= abs(dy)) {
+            if (dx > 0 && is_skill_unlocked(my_key, CMD_BLINK_RIGHT)) {
+                set_custom_secrete_message(my_key, "점멸 돌진 →");
+                return CMD_BLINK_RIGHT;
+            }
+            else if (dx < 0 && is_skill_unlocked(my_key, CMD_BLINK_LEFT)) {
+                set_custom_secrete_message(my_key, "점멸 돌진 ←");
+                return CMD_BLINK_LEFT;
+            }
+        }
+        else {
+            if (dy > 0 && is_skill_unlocked(my_key, CMD_BLINK_DOWN)) {
+                set_custom_secrete_message(my_key, "점멸 돌진 ↓");
+                return CMD_BLINK_DOWN;
+            }
+            else if (dy < 0 && is_skill_unlocked(my_key, CMD_BLINK_UP)) {
+                set_custom_secrete_message(my_key, "점멸 돌진 ↑");
+                return CMD_BLINK_UP;
+            }
+        }
+    }
 
-    return best_cmd;
+    // =========================
+    // 6. 그 외 : 기본 추격 로직
+    // =========================
+    set_custom_secrete_message(my_key, "추격");
+    if (my_x < opp_x) return CMD_RIGHT;
+    if (my_x > opp_x) return CMD_LEFT;
+    if (my_y < opp_y) return CMD_DOWN;
+    if (my_y > opp_y) return CMD_UP;
+
+    // 혹시라도 완전 정지 상태면 쉰다
+    set_custom_secrete_message(my_key, "대기");
+    return CMD_REST;
 }
 
 // =================================================================================================
@@ -722,12 +500,12 @@ int veteran_ai(const Player* my_info, const Player* opponent_info) {
 void student2_ai_entry() {
 
     // AI 등록
-    my_secret_key = register_player_ai("TEAM-1-VETERAN", veteran_ai);
+    my_secret_key = register_player_ai("TEAM-1-TOURNAMENT", player_b_strategy);
 
     // CSV 파일 읽기
     ReadFile();
 
-    printf("\n>>> TEAM-1 베테랑 AI 스킬 해금 시작 <<<\n");
+    printf("\n>>> TEAM-1 토너먼트 AI 스킬 해금 시작 <<<\n");
 
     // 모든 문제 풀이
     solve_problem_1_poison(my_secret_key);
@@ -739,6 +517,6 @@ void student2_ai_entry() {
     solve_problem_7_hv(my_secret_key);
     solve_problem_8_secret(my_secret_key);
 
-    printf("\n[베테랑 AI] 초기화 완료. 전투 준비 완료!\n");
+    printf("\n[토너먼트 AI] 초기화 완료. 전투 준비 완료!\n");
     getchar();
 }
