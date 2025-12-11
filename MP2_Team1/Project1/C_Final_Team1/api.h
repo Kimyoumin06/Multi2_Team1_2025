@@ -1,4 +1,3 @@
-#pragma once
 // api.h (학생에게 제공할 유일한 헤더 파일)
 
 #ifndef API_H

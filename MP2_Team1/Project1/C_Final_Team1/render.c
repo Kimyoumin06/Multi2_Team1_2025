@@ -372,4 +372,3 @@ void render_localized_flash(const GameState* state, int flash_bg_code) {
         }
     }
 }
-

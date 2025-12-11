@@ -1,4 +1,3 @@
-#pragma once
 #ifndef ANSI_UTIL_H
 #define ANSI_UTIL_H
 #include <Windows.h>
