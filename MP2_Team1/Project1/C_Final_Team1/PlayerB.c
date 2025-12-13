@@ -1,20 +1,4 @@
-﻿/**
- * =================================================================================================
- * [PlayerB - 최적화된 전투 AI]
- * =================================================================================================
- * Team: TEAM-1
- * Members: 20251402 김유민, 20251413 이종석, 20251398 홍주아, 20251389 김유미
- *
- * 핵심 전략:
- * 1. 생존 우선 (Survival First)
- * 2. 킬각 포착 (Kill Opportunity Detection)
- * 3. 근접전 우위 확보 (Close Combat Superiority)
- * 4. 효율적 MP 관리 (Efficient MP Management)
- * 5. 안전 거리 유지 (Safe Distance Control)
- * =================================================================================================
- */
-
-#include "api.h"
+﻿#include "api.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -437,16 +421,6 @@ void solve_problem_8_secret(int my_key) {
 // [PART 3] 최적화된 AI 로직 구현부
 // =================================================================================================
 
-/**
- * PlayerB 최적화 전투 AI
- *
- * 주요 특징:
- * - 생존 우선 전략 (HP 기반 회복 판단)
- * - 킬각 포착 시스템 (상대 HP 2 이하 최우선 공격)
- * - 근접전 우위 확보 (STRIKE, POISON 적극 활용)
- * - 안전 거리 개념 도입 (dist >= 3에서 회복/휴식)
- * - 효율적 MP 관리
- */
 int player_b_strategy(const Player* my_info, const Player* opponent_info) {
     if (!my_info || !opponent_info) return CMD_REST;
 
