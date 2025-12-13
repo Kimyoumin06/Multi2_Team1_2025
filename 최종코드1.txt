@@ -1,10 +1,11 @@
-﻿#include "api.h"
+#include "api.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
 #define MAX_Weapon 100
 
+// 아이템 정보를 저장할 구조체
 typedef struct {
     int id;
     char name[50];
@@ -123,6 +124,7 @@ void solve_problem_1_poison(int my_key) {
     }
 
     char result[500] = "";
+    // 파일에 등장하는 역순으로 정렬
     for (int i = filtered_count - 1; i >= 0; i--) {
         int idx = filtered_indices[i];
         if (strlen(result) > 0) {

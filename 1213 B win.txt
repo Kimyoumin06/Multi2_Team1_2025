@@ -1,0 +1,158 @@
+#include "api.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+// PlayerB(학생2)용 비밀 키
+static int my_secret_key_b;
+
+// 맨해튼 거리 계산 함수 (PlayerA랑 동일한 방식)
+static int calculate_distance(const Player* p1, const Player* p2)
+{
+    int dx = abs(get_player_x(p1) - get_player_x(p2));
+    int dy = abs(get_player_y(p1) - get_player_y(p2));
+    return dx + dy;
+}
+
+/*
+ * PlayerB 전투 AI
+ * - 상대(PlayerA)는 simple_killer_ai: CMD_ATTACK + 직선 추격만 함.
+ * - 우리는 STRIKE / RANGE_ATTACK / HEAL / HEAL_ALL 적극 사용해서 정면 싸움에서 우위.
+ */
+static int playerB_ai(const Player* my_info, const Player* opponent_info)
+{
+    int my_hp = get_player_hp(my_info);
+    int my_mp = get_player_mp(my_info);
+    int opp_hp = get_player_hp(opponent_info);
+    int my_x = get_player_x(my_info);
+    int my_y = get_player_y(my_info);
+    int opp_x = get_player_x(opponent_info);
+    int opp_y = get_player_y(opponent_info);
+    int dist = calculate_distance(my_info, opponent_info);
+    int my_key = my_secret_key_b;
+
+    int same_row = (my_y == opp_y);
+    int same_col = (my_x == opp_x);
+
+    // 내가 쓸 수 있는 스킬 가능 여부
+    int can_strike = (dist <= 1 && my_mp >= 2 && is_skill_unlocked(my_key, CMD_STRIKE));
+    int can_attack = (dist <= 1); // 기본 공격은 MP 필요 X
+    int can_range = (dist == 2 && my_mp >= 1 && is_skill_unlocked(my_key, CMD_RANGE_ATTACK));
+    int can_heal_all = (my_mp >= 2 && is_skill_unlocked(my_key, CMD_HEAL_ALL));
+    int can_heal = (my_mp >= 1); // HEAL은 기본 스킬이라고 가정
+    int can_h_attack = (same_row && my_mp >= 3 && is_skill_unlocked(my_key, CMD_H_ATTACK));
+    int can_v_attack = (same_col && my_mp >= 3 && is_skill_unlocked(my_key, CMD_V_ATTACK));
+    int can_poison = (dist <= 1 && my_mp >= 5 && is_skill_unlocked(my_key, CMD_POISON));
+
+    // =========================
+    // 0. 생존 우선: 내 HP가 낮을 때 힐
+    // =========================
+
+    // HP 1 이하: 무조건 힐부터 생각
+    if (my_hp <= 1) {
+        if (can_heal_all) return CMD_HEAL_ALL;
+        if (can_heal)     return CMD_HEAL;
+        // 힐도 못하는 상황이면 어차피 위험, 그냥 공격
+        if (can_strike)   return CMD_STRIKE;
+        if (can_attack)   return CMD_ATTACK;
+    }
+
+    // HP 2일 때: 조금 여유 있을 때 미리 크게 회복
+    if (my_hp == 2 && can_heal_all) {
+        return CMD_HEAL_ALL;
+    }
+
+    // =========================
+    // 1. 킬각: 상대 HP가 2 이하 → 먼저 잡는 게 이득
+    // =========================
+    if (opp_hp <= 2) {
+        // 1순위: 붙어있으면 STRIKE
+        if (can_strike) return CMD_STRIKE;
+
+        // 2순위: 거리 2면 RANGE_ATTACK
+        if (can_range)  return CMD_RANGE_ATTACK;
+
+        // 3순위: 한 줄/한 칸에 있으면 H/V 공격
+        if (can_h_attack) return CMD_H_ATTACK;
+        if (can_v_attack) return CMD_V_ATTACK;
+
+        // 마지막: 근접 평타
+        if (can_attack) return CMD_ATTACK;
+    }
+
+    // =========================
+    // 2. 평상시: 근접전 우선 처리
+    // =========================
+    if (dist <= 1) {
+        // STRIKE가 되면 STRIKE로 딜 우위 확보
+        if (can_strike) return CMD_STRIKE;
+
+        // 아니면 평타
+        if (can_attack) return CMD_ATTACK;
+    }
+
+    // =========================
+    // 3. 거리 2에서는 원거리 견제
+    // =========================
+    if (can_range) {
+        return CMD_RANGE_ATTACK;
+    }
+
+    // =========================
+    // 4. 라인(가로/세로) 공격 기회 있으면 사용
+    // =========================
+    if (can_h_attack) return CMD_H_ATTACK;
+    if (can_v_attack) return CMD_V_ATTACK;
+
+    // =========================
+    // 5. 여유 있을 때만 독 한 번 정도
+    //    (내 피/마나 여유, 상대 피 많을 때 장기적 이득)
+    // =========================
+    if (can_poison && my_hp >= 4 && opp_hp >= 6) {
+        return CMD_POISON;
+    }
+
+    // =========================
+    // 6. 이동 로직: PlayerA와 동일한 방식으로 추격
+    // =========================
+    if (my_x != opp_x) {
+        if (my_x < opp_x) return CMD_RIGHT;
+        else              return CMD_LEFT;
+    }
+
+    if (my_y != opp_y) {
+        if (my_y < opp_y) return CMD_DOWN;
+        else              return CMD_UP;
+    }
+
+    // 완전 겹쳐 있는 이상한 상황이면 일단 공격
+    if (can_attack) return CMD_ATTACK;
+    return CMD_REST;
+}
+
+// =================================================================================================
+// [학생2 엔트리] PlayerB 등록 + 스킬 해금 (테스트용 치트 해금)
+// =================================================================================================
+void student2_ai_entry(void)
+{
+    // PlayerB에 우리 AI 등록
+    my_secret_key_b = register_player_ai("TEAM-1-B", playerB_ai);
+
+    // ===== 여기 아래는 "친구랑 붙어보기용" 스킬 직접 해금 =====
+    //  → PlayerA 쪽 student1_ai_entry()에서 쓰는 것과 똑같이 맞춰줌
+
+    attempt_skill_unlock(my_secret_key_b, CMD_POISON, "Ancient_Relic|Doom_Greatsword|Immortal_Sword");
+    attempt_skill_unlock(my_secret_key_b, CMD_STRIKE, "2key");
+    attempt_skill_unlock(my_secret_key_b, CMD_BLINK_DOWN, "*A**C**F**T*");   // BLINK 4종 같이 열리는 버전
+    attempt_skill_unlock(my_secret_key_b, CMD_HEAL_ALL, "*H*");
+    attempt_skill_unlock(my_secret_key_b, CMD_RANGE_ATTACK, "\"LOT,A\"");
+    attempt_skill_unlock(my_secret_key_b, CMD_BLESS, "T");
+    attempt_skill_unlock(my_secret_key_b, CMD_H_ATTACK, "Inf_03");
+    attempt_skill_unlock(my_secret_key_b, CMD_V_ATTACK, "Inf_03");  // 세로 공격도 같은 키로 열릴 거라고 가정
+    attempt_skill_unlock(my_secret_key_b, CMD_SECRETE, "wn_St");
+
+    if (is_skill_unlocked(my_secret_key_b, CMD_SECRETE)) {
+        set_custom_secrete_message(my_secret_key_b, "2P가 진짜 보스다 ^^");
+    }
+
+    // 여기서는 getchar() 안 넣음 (P1 쪽에서 이미 한 번 멈추니까)
+}
