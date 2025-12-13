@@ -1,4 +1,20 @@
-﻿#include "api.h"
+﻿/**
+ * =================================================================================================
+ * [PlayerB - 최적화된 전투 AI]
+ * =================================================================================================
+ * Team: TEAM-1
+ * Members: 20251402 김유민, 20251413 이종석, 20251398 홍주아, 20251389 김유미
+ *
+ * 핵심 전략:
+ * 1. 생존 우선 (Survival First)
+ * 2. 킬각 포착 (Kill Opportunity Detection)
+ * 3. 근접전 우위 확보 (Close Combat Superiority)
+ * 4. 효율적 MP 관리 (Efficient MP Management)
+ * 5. 안전 거리 유지 (Safe Distance Control)
+ * =================================================================================================
+ */
+
+#include "api.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +35,7 @@ typedef struct {
 // 전역 변수
 Weapon list[MAX_Weapon];
 int count = 0;
-int my_secret_key; // PlayerB의 비밀 키 (전역 변수)
+int my_secret_key; // PlayerB의 비밀 키
 
 // CSV 파일명
 static const char* TARGET_CSV = "game_puzzle_en.csv";
@@ -32,10 +48,10 @@ static const char* TARGET_CSV = "game_puzzle_en.csv";
 static int calculate_distance(const Player* p1, const Player* p2) {
     int dx = abs(get_player_x(p1) - get_player_x(p2));
     int dy = abs(get_player_y(p1) - get_player_y(p2));
-        return dx + dy;
+    return dx + dy;
 }
 
-// ID로 아이템을 찾아주는 도우미 함수 (전역 list, count 사용)
+// ID로 아이템을 찾아주는 도우미 함수
 Weapon* find_item_by_id(int id) {
     for (int i = 0; i < count; i++) {
         if (list[i].id == id) return &list[i];
@@ -43,7 +59,7 @@ Weapon* find_item_by_id(int id) {
     return NULL;
 }
 
-// CSV 파일 읽기 함수 (전역 list, count 사용)
+// CSV 파일 읽기 함수
 void ReadFile(void) {
     FILE* fp;
     if (fopen_s(&fp, TARGET_CSV, "r") != 0 || fp == NULL) {
@@ -106,7 +122,6 @@ void ReadFile(void) {
     printf("SYSTEM: [PlayerB] Loaded %d items from %s\n", count, TARGET_CSV);
 }
 
-
 // =================================================================================================
 // [PART 2] 문제 풀이 함수들 (1~8번) - 기존 로직 유지
 // =================================================================================================
@@ -145,7 +160,6 @@ void solve_problem_2_strike(int my_key) {
     for (int i = 0; i < count; i++) {
         if (strcmp(list[i].slot, "W") == 0) {
             char* pos = strchr(list[i].KEY_FRAG, 'T');
-
             if (pos != NULL) {
                 int index = (int)(pos - list[i].KEY_FRAG);
                 total_index += index;
@@ -164,10 +178,11 @@ void solve_problem_2_strike(int my_key) {
         printf("TEAM-1 : CMD_STRIKE 해금 실패 ㅜㅜ\n");
 }
 
-// [문제 3] CMD_BLINK_UP 해금 (20251413 이종석)
+// [문제 3] CMD_BLINK 4종 해금 (20251413 이종석)
 void solve_problem_3_blink(int my_key) {
     char final_key[100] = "";
 
+    // 조건 1: HP = DEF(202) + DEF(208)
     Weapon* i202 = find_item_by_id(202);
     Weapon* i208 = find_item_by_id(208);
     int target_hp = (i202 && i208) ? (i202->DEF + i208->DEF) : 0;
@@ -178,6 +193,7 @@ void solve_problem_3_blink(int my_key) {
         }
     }
 
+    // 조건 2: ATK = ATK(205) * ATK(212)
     Weapon* i205 = find_item_by_id(205);
     Weapon* i212 = find_item_by_id(212);
     int target_atk = (i205 && i212) ? (i205->ATK * i212->ATK) : 0;
@@ -191,6 +207,7 @@ void solve_problem_3_blink(int my_key) {
         strcat_s(final_key, sizeof(final_key), list[last_match_idx].KEY_FRAG);
     }
 
+    // 조건 3: CURSE에 "C_01" 포함, 마지막
     int last_curse_idx = -1;
     for (int i = 0; i < count; i++) {
         if (strstr(list[i].CURSE, "C_01") && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
@@ -199,6 +216,7 @@ void solve_problem_3_blink(int my_key) {
     }
     if (last_curse_idx != -1) strcat_s(final_key, sizeof(final_key), list[last_curse_idx].KEY_FRAG);
 
+    // 조건 4: NAME이 'I'로 시작, 첫 번째
     for (int i = 0; i < count; i++) {
         if (list[i].name[0] == 'I' && strcmp(list[i].KEY_FRAG, "NIL") != 0) {
             strcat_s(final_key, sizeof(final_key), list[i].KEY_FRAG);
@@ -206,11 +224,16 @@ void solve_problem_3_blink(int my_key) {
         }
     }
 
+    // BLINK 4종 모두 해금
     attempt_skill_unlock(my_key, CMD_BLINK_UP, final_key);
+    attempt_skill_unlock(my_key, CMD_BLINK_DOWN, final_key);
+    attempt_skill_unlock(my_key, CMD_BLINK_LEFT, final_key);
+    attempt_skill_unlock(my_key, CMD_BLINK_RIGHT, final_key);
+
     if (is_skill_unlocked(my_key, CMD_BLINK_UP))
-        printf("TEAM-1 : CMD_BLINK 해금 완료\n");
+        printf("TEAM-1 : CMD_BLINK 4종 해금 완료\n");
     else
-        printf("TEAM-1 : CMD_BLINK 해금 실패 ㅜㅜ\n");
+        printf("TEAM-1 : CMD_BLINK 4종 해금 실패 ㅜㅜ\n");
 }
 
 // [문제 4] CMD_HEAL_ALL 해금 (20251413 이종석)
@@ -235,7 +258,6 @@ void solve_problem_4_heal_all(int my_key) {
 
 // [문제 5] CMD_RANGE_ATTACK 해금 (20251398 홍주아)
 void solve_problem_5_range(int my_key) {
-
     char final_key[100] = "";
     int N = 0;
 
@@ -249,7 +271,6 @@ void solve_problem_5_range(int my_key) {
     if (N > 0) {
         FILE* fp = NULL;
         if (fopen_s(&fp, TARGET_CSV, "rb") == 0 && fp != NULL) {
-
             if (fseek(fp, (long)(N - 1), SEEK_SET) == 0) {
                 char t[6] = { 0 };
                 size_t r = fread(t, 1, 5, fp);
@@ -267,12 +288,10 @@ void solve_problem_5_range(int my_key) {
         printf("TEAM-1 : CMD_RANGE_ATTACK 해금 실패 ㅜㅜ\n");
 }
 
-// [문제 6] CMD_SUICIDE (CMD_BLESS) 해금 (20251398 홍주아)
-void solve_problem_6_suicide(int my_key) {
-
+// [문제 6] CMD_BLESS 해금 (20251398 홍주아)
+void solve_problem_6_bless(int my_key) {
     char final_key[100] = "";
     char combined[2000] = { 0 };
-
 
     for (int i = 0; i < count; i++) {
         if (strstr(list[i].name, "Sword") != NULL) {
@@ -299,12 +318,11 @@ void solve_problem_6_suicide(int my_key) {
 
     if (best) strcpy_s(final_key, sizeof(final_key), best);
 
-    // CMD_SUICIDE 대신 CMD_BLESS 해금 시도 (문제 번호 불일치 가능성 고려)
     attempt_skill_unlock(my_key, CMD_BLESS, final_key);
     if (is_skill_unlocked(my_key, CMD_BLESS))
-        printf("TEAM-1 : CMD_BLESS (SUICIDE) 해금 완료\n");
+        printf("TEAM-1 : CMD_BLESS 해금 완료\n");
     else
-        printf("TEAM-1 : CMD_BLESS (SUICIDE) 해금 실패 ㅜㅜ\n");
+        printf("TEAM-1 : CMD_BLESS 해금 실패 ㅜㅜ\n");
 }
 
 // [문제 7] CMD_H_ATTACK / CMD_V_ATTACK 해금 (20251389 김유미)
@@ -312,8 +330,8 @@ void solve_problem_7_hv(int my_key) {
     char final_key[16] = "";
     char bestName[50] = "";
     char bestCurse[50] = "";
-    int  maxNameLen = -1;
-    int  minCurseLen = 9999;
+    int maxNameLen = -1;
+    int minCurseLen = 9999;
 
     for (int i = 0; i < count; i++) {
         const char* name = list[i].name;
@@ -337,7 +355,7 @@ void solve_problem_7_hv(int my_key) {
     }
 
     if (bestName[0] == '\0' || bestCurse[0] == '\0') {
-        printf("TEAM-1 (문제 7/Skill 17/18) : 데이터 부족으로 해금 실패.\n");
+        printf("TEAM-1 (문제 7) : 데이터 부족으로 해금 실패.\n");
         return;
     }
 
@@ -378,7 +396,7 @@ void solve_problem_8_secret(int my_key) {
     }
 
     if (targetName[0] == '\0') {
-        printf("TEAM-1 (문제 8/Skill 19) : 'Stone' 아이템을 찾을 수 없습니다.\n");
+        printf("TEAM-1 (문제 8) : 'Stone' 아이템을 찾을 수 없습니다.\n");
         return;
     }
 
@@ -389,27 +407,24 @@ void solve_problem_8_secret(int my_key) {
     char* context_vowels = NULL;
     char* tok = strtok_s(buf, delims, &context_vowels);
 
-    char    bestToken[50] = "";
+    char bestToken[50] = "";
     size_t bestLen = 0;
     while (tok != NULL) {
         size_t len = strlen(tok);
-        // 더 길면 교체
         if (len > bestLen) {
             bestLen = len;
             strcpy_s(bestToken, sizeof(bestToken), tok);
         }
-        // strtok_s 반복 호출
         tok = strtok_s(NULL, delims, &context_vowels);
     }
 
     if (bestToken[0] == '\0') {
-        printf("TEAM-1 (문제 8/Skill 19) : 가장 긴 자음 토큰을 찾을 수 없습니다.\n");
+        printf("TEAM-1 (문제 8) : 가장 긴 자음 토큰을 찾을 수 없습니다.\n");
         return;
     }
 
     strncpy_s(final_key, sizeof(final_key), bestToken, _TRUNCATE);
 
-    // CMD_SECRETE 해금 시도
     attempt_skill_unlock(my_key, CMD_SECRETE, final_key);
 
     if (is_skill_unlocked(my_key, CMD_SECRETE))
@@ -418,147 +433,224 @@ void solve_problem_8_secret(int my_key) {
         printf("TEAM-1 : CMD_SECRETE 해금 실패 ㅜㅜ\n");
 }
 
-
 // =================================================================================================
-// [PART 3] AI 로직 구현부 (1213 B win.txt의 상세 로직으로 교체)
+// [PART 3] 최적화된 AI 로직 구현부
 // =================================================================================================
 
 /**
- * PlayerB 전투 AI (1213 B win.txt의 상세 로직)
- * - 상대(PlayerA)는 simple_killer_ai: CMD_ATTACK + 직선 추격만 함.
- * - 우리는 STRIKE / RANGE_ATTACK / HEAL / HEAL_ALL 적극 사용해서 정면 싸움에서 우위.
+ * PlayerB 최적화 전투 AI
+ *
+ * 주요 특징:
+ * - 생존 우선 전략 (HP 기반 회복 판단)
+ * - 킬각 포착 시스템 (상대 HP 2 이하 최우선 공격)
+ * - 근접전 우위 확보 (STRIKE, POISON 적극 활용)
+ * - 안전 거리 개념 도입 (dist >= 3에서 회복/휴식)
+ * - 효율적 MP 관리
  */
 int player_b_strategy(const Player* my_info, const Player* opponent_info) {
+    if (!my_info || !opponent_info) return CMD_REST;
+
+    // 현재 상태 분석
     int my_hp = get_player_hp(my_info);
     int my_mp = get_player_mp(my_info);
     int opp_hp = get_player_hp(opponent_info);
-        int my_x = get_player_x(my_info);
+    int my_x = get_player_x(my_info);
     int my_y = get_player_y(my_info);
     int opp_x = get_player_x(opponent_info);
     int opp_y = get_player_y(opponent_info);
-        int dist = calculate_distance(my_info, opponent_info);
-        int my_key = my_secret_key; // 전역 변수 사용
+    int dist = calculate_distance(my_info, opponent_info);
+    int my_key = my_secret_key;
 
     int same_row = (my_y == opp_y);
-        int same_col = (my_x == opp_x);
+    int same_col = (my_x == opp_x);
 
-        // 내가 쓸 수 있는 스킬 가능 여부
-        int can_strike = (dist <= 1 && my_mp >= 2 && is_skill_unlocked(my_key, CMD_STRIKE));
-        int can_attack = (dist <= 1); // 기본 공격은 MP 필요 X [cite: 9]
+    // 스킬 사용 가능 여부 체크
+    int can_strike = (dist <= 1 && my_mp >= 2 && is_skill_unlocked(my_key, CMD_STRIKE));
+    int can_attack = (dist <= 1);
     int can_range = (dist == 2 && my_mp >= 1 && is_skill_unlocked(my_key, CMD_RANGE_ATTACK));
-        int can_heal_all = (my_mp >= 2 && is_skill_unlocked(my_key, CMD_HEAL_ALL));
-        int can_heal = (my_mp >= 1); // HEAL은 기본 스킬이라고 가정 [cite: 10, 11]
+    int can_heal_all = (my_mp >= 2 && is_skill_unlocked(my_key, CMD_HEAL_ALL));
+    int can_heal = (my_mp >= 1);
     int can_h_attack = (same_row && my_mp >= 3 && is_skill_unlocked(my_key, CMD_H_ATTACK));
-        int can_v_attack = (same_col && my_mp >= 3 && is_skill_unlocked(my_key, CMD_V_ATTACK));
-        int can_poison = (dist <= 1 && my_mp >= 5 && is_skill_unlocked(my_key, CMD_POISON));
+    int can_v_attack = (same_col && my_mp >= 3 && is_skill_unlocked(my_key, CMD_V_ATTACK));
+    int can_poison = (dist <= 1 && my_mp >= 5 && is_skill_unlocked(my_key, CMD_POISON));
 
-        // =========================
-        // 0. 생존 우선: 내 HP가 낮을 때 힐
-        // =========================
+    // =========================
+    // Phase 0: 생존 우선 (긴급 상황)
+    // =========================
 
-        // HP 1 이하: 무조건 힐부터 생각
-        if (my_hp <= 1) {
-            if (can_heal_all) return CMD_HEAL_ALL;
-                if (can_heal)     return CMD_HEAL;
-                    // 힐도 못하는 상황이면 어차피 위험, 그냥 공격
-                    if (can_strike)   return CMD_STRIKE;
-                        if (can_attack)   return CMD_ATTACK;
+    if (my_hp <= 1) {
+        // 절대 위기: 무조건 회복
+        if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+            set_custom_secrete_message(my_key, "긴급 힐!");
         }
 
-    // HP 2일 때: 조금 여유 있을 때 미리 크게 회복
-    if (my_hp == 2 && can_heal_all) {
+        if (can_heal_all) return CMD_HEAL_ALL;
+        if (can_heal) return CMD_HEAL;
+
+        // 힐이 불가능하면 마지막 발악 공격
+        if (can_strike) return CMD_STRIKE;
+        if (can_attack) return CMD_ATTACK;
+        return CMD_REST;
+    }
+
+    // HP 2 이하 + 안전 거리: 미리 광역 회복
+    if (my_hp <= 2 && can_heal_all && dist >= 3) {
+        if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+            set_custom_secrete_message(my_key, "미리 광역 힐");
+        }
         return CMD_HEAL_ALL;
     }
 
     // =========================
-    // 1. 킬각: 상대 HP가 2 이하 → 먼저 잡는 게 이득
+    // Phase 1: 킬각 포착 (최우선)
     // =========================
+
     if (opp_hp <= 2) {
-        // 1순위: 붙어있으면 STRIKE
-        if (can_strike) return CMD_STRIKE;
-            // 2순위: 거리 2면 RANGE_ATTACK
-            if (can_range)  return CMD_RANGE_ATTACK;
-                // 3순위: 한 줄/한 칸에 있으면 H/V 공격
-                if (can_h_attack) return CMD_H_ATTACK;
-                    if (can_v_attack) return CMD_V_ATTACK;
+        if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+            set_custom_secrete_message(my_key, "킬각 포착!");
+        }
 
-                        // 마지막: 근접 평타
-                        if (can_attack) return CMD_ATTACK;
+        // 거리 1: 즉시 공격
+        if (dist <= 1) {
+            if (can_strike) return CMD_STRIKE;
+            return CMD_ATTACK;
+        }
+
+        // 거리 2: 원거리 공격
+        if (can_range) return CMD_RANGE_ATTACK;
+
+        // 라인 공격 가능
+        if (can_h_attack) return CMD_H_ATTACK;
+        if (can_v_attack) return CMD_V_ATTACK;
+
+        // 킬각인데 거리가 멀면 추격
+        if (my_x != opp_x) {
+            return (my_x < opp_x) ? CMD_RIGHT : CMD_LEFT;
+        }
+        if (my_y != opp_y) {
+            return (my_y < opp_y) ? CMD_DOWN : CMD_UP;
+        }
     }
 
     // =========================
-    // 2. 평상시: 근접전 우선 처리
+    // Phase 2: 근접전 우위 확보
     // =========================
+
     if (dist <= 1) {
-        // STRIKE가 되면 STRIKE로 딜 우위 확보
+        if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+            set_custom_secrete_message(my_key, "근접전 우위!");
+        }
+
+        // STRIKE로 2 데미지 딜링
         if (can_strike) return CMD_STRIKE;
-            // 아니면 평타
-            if (can_attack) return CMD_ATTACK;
+
+        // 독 스킬 (장기전 대비, 상대 HP 4 이상일 때만)
+        if (can_poison && my_mp >= 5 && opp_hp >= 4) {
+            return CMD_POISON;
+        }
+
+        // 기본 공격
+        return CMD_ATTACK;
     }
 
     // =========================
-    // 3. 거리 2에서는 원거리 견제
+    // Phase 3: 거리 2 견제
     // =========================
+
     if (can_range) {
+        if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+            set_custom_secrete_message(my_key, "거리 2 견제");
+        }
         return CMD_RANGE_ATTACK;
     }
 
     // =========================
-    // 4. 라인(가로/세로) 공격 기회 있으면 사용
+    // Phase 4: 라인 공격 (MP 충분할 때)
     // =========================
-    if (can_h_attack) return CMD_H_ATTACK;
-        if (can_v_attack) return CMD_V_ATTACK;
 
-            // =========================
-            // 5. 여유 있을 때만 독 한 번 정도
-            //    (내 피/마나 여유, 상대 피 많을 때 장기적 이득)
-            // =========================
-            if (can_poison && my_hp >= 4 && opp_hp >= 6) {
-                return CMD_POISON;
+    if (my_mp >= 3) {
+        if (can_h_attack) {
+            if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+                set_custom_secrete_message(my_key, "가로 라인 공격");
             }
+            return CMD_H_ATTACK;
+        }
+        if (can_v_attack) {
+            if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+                set_custom_secrete_message(my_key, "세로 라인 공격");
+            }
+            return CMD_V_ATTACK;
+        }
+    }
 
     // =========================
-    // 6. 이동 로직: PlayerA와 동일한 방식으로 추격
+    // Phase 5: HP 관리 (안전 거리에서만)
     // =========================
+
+    if (my_hp <= 3 && dist >= 3) {
+        if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+            set_custom_secrete_message(my_key, "안전 힐");
+        }
+
+        if (can_heal_all) return CMD_HEAL_ALL;
+        if (can_heal) return CMD_HEAL;
+    }
+
+    // =========================
+    // Phase 6: MP 관리 (안전 거리에서만)
+    // =========================
+
+    if (my_mp <= 1 && dist >= 3) {
+        if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+            set_custom_secrete_message(my_key, "MP 충전");
+        }
+        return CMD_REST;
+    }
+
+    // =========================
+    // Phase 7: 이동 로직 (추격)
+    // =========================
+
+    if (is_skill_unlocked(my_key, CMD_SECRETE)) {
+        set_custom_secrete_message(my_key, "추격 이동");
+    }
+
     if (my_x != opp_x) {
-        if (my_x < opp_x) return CMD_RIGHT;
-        else              return CMD_LEFT;
+        return (my_x < opp_x) ? CMD_RIGHT : CMD_LEFT;
     }
 
     if (my_y != opp_y) {
-        if (my_y < opp_y) return CMD_DOWN;
-        else              return CMD_UP;
+        return (my_y < opp_y) ? CMD_DOWN : CMD_UP;
     }
 
-    // 완전 겹쳐 있는 이상한 상황이면 일단 공격
-    if (can_attack) return CMD_ATTACK;
-        return CMD_REST;
+    // =========================
+    // 최종: 기본값
+    // =========================
+
+    return CMD_REST;
 }
 
-
 // =================================================================================================
-// [PART 4] 시스템 진입점 (AI 등록 함수 수정)
+// [PART 4] 시스템 진입점
 // =================================================================================================
 
-void student2_ai_entry() {
+void student2_ai_entry(void) {
 
-    // 1. AI 등록 (상세한 로직을 가진 player_b_strategy 함수로 등록)
-    my_secret_key = register_player_ai("TEAM-1", player_b_strategy); // TEAM-1 유지
+    // AI 등록 (최적화된 전략 함수 사용)
+    my_secret_key = register_player_ai("TEAM-1", player_b_strategy);
 
-    // 2. CSV 파일 읽기 (전역 변수 list, count에 저장)
+    // CSV 파일 읽기
     ReadFile();
 
     printf("\n>>> TEAM-1 스킬 해금 시도 중 (문제 1~8) <<<\n");
 
-    // ------------------------------------------------------------------
-    // 문제 1~8 해금 시도 (기존 로직 유지)
-    // ------------------------------------------------------------------
+    // 문제 1~8 해금 시도
     solve_problem_1_poison(my_secret_key);
     solve_problem_2_strike(my_secret_key);
     solve_problem_3_blink(my_secret_key);
     solve_problem_4_heal_all(my_secret_key);
     solve_problem_5_range(my_secret_key);
-    solve_problem_6_suicide(my_secret_key);
+    solve_problem_6_bless(my_secret_key);
     solve_problem_7_hv(my_secret_key);
     solve_problem_8_secret(my_secret_key);
 
@@ -567,7 +659,6 @@ void student2_ai_entry() {
         set_custom_secrete_message(my_secret_key, "2P가 진짜 보스다 ^^");
     }
 
-
-    printf("\nTEAM-1 : 플레이어 초기화 완료. 아무키나 누르시오.\n");
+    printf("\nTEAM-1 : [최적화 AI] 초기화 완료. 아무키나 누르시오.\n");
     getchar();
 }
